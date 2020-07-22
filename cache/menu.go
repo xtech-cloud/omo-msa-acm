@@ -35,6 +35,15 @@ func GetMenu(uid string) *MenuInfo {
 	return nil
 }
 
+func HadMenuByName(name string) bool {
+	for i := 0;i < len(cacheCtx.menus);i += 1{
+		if cacheCtx.menus[i].Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (mine *MenuInfo)initInfo(db *nosql.Menu)  {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID

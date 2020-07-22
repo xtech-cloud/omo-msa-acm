@@ -17,6 +17,7 @@ type UserLink struct {
 	Creator string `json:"creator" bson:"creator"`
 	Operator string `json:"operator" bson:"operator"`
 
+	Type uint8 `json:"type" bson:"type"`
 	User   string                	`json:"user" bson:"user"`
 	Roles  []string                `json:"roles" bson:"roles"`
 }

@@ -27,6 +27,14 @@ func switchRole(info *cache.RoleInfo) *pb.RoleInfo {
 }
 
 func (mine *RoleService)AddOne(ctx context.Context, in *pb.ReqRoleAdd, out *pb.ReplyRoleInfo) error {
+	inLog("role.add", in)
+	if len(in.Name) < 1 {
+		out.Status = pb.ResultStatus_Empty
+		return errors.New("the role name is empty")
+	}
+	if cache.HadRoleByName(in.Name) {
+		return errors.New("the role name is existed")
+	}
 	info := new(cache.RoleInfo)
 	info.Name = in.Name
 	info.Remark = in.Remark
@@ -42,6 +50,7 @@ func (mine *RoleService)AddOne(ctx context.Context, in *pb.ReqRoleAdd, out *pb.R
 }
 
 func (mine *RoleService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyRoleInfo) error {
+	inLog("role.get", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the role uid is empty")
@@ -56,6 +65,7 @@ func (mine *RoleService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.
 }
 
 func (mine *RoleService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+	inLog("role.remove", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -73,6 +83,7 @@ func (mine *RoleService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 }
 
 func (mine *RoleService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyRoleList) error {
+	inLog("role.all", in)
 	out.List = make([]*pb.RoleInfo, 0, 5)
 	for _, value := range cache.AllRoles() {
 		out.List = append(out.List, switchRole(value))
@@ -81,6 +92,7 @@ func (mine *RoleService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.
 }
 
 func (mine *RoleService)UpdateBase(ctx context.Context, in *pb.ReqRoleUpdate, out *pb.ReplyRoleInfo) error {
+	inLog("role.update", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -99,26 +111,32 @@ func (mine *RoleService)UpdateBase(ctx context.Context, in *pb.ReqRoleUpdate, ou
 	return err
 }
 
-func (mine *RoleService)AppendMenu(ctx context.Context, in *pb.ReqRoleMenu, out *pb.ReplyRoleMenu) error {
+func (mine *RoleService)AppendMenu(ctx context.Context, in *pb.ReqRoleMenus, out *pb.ReplyRoleMenu) error {
+	inLog("role.append", in)
 	if len(in.Role) < 1 {
 		out.Status = pb.ResultStatus_Empty
-		return errors.New("the user uid is empty")
+		return errors.New("the role uid is empty")
 	}
 	info := cache.GetRole(in.Role)
 	if info == nil {
 		out.Status = pb.ResultStatus_NotExisted
 		return errors.New("the role not found")
 	}
-	err := info.AppendMenu(cache.GetMenu(in.Menu))
-	if err != nil {
-		out.Status = pb.ResultStatus_DBException
+	var err error
+	for _, menu := range in.Menus {
+		err = info.AppendMenu(cache.GetMenu(menu))
+		if err != nil {
+			out.Status = pb.ResultStatus_DBException
+		}
 	}
+
 	out.Role = in.Role
 	out.Menus = info.Menus()
 	return err
 }
 
-func (mine *RoleService)SubtractMenu(ctx context.Context, in *pb.ReqRoleMenu, out *pb.ReplyRoleMenu) error {
+func (mine *RoleService)SubtractMenu(ctx context.Context, in *pb.ReqRoleMenus, out *pb.ReplyRoleMenu) error {
+	inLog("role.subtract", in)
 	if len(in.Role) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -128,10 +146,11 @@ func (mine *RoleService)SubtractMenu(ctx context.Context, in *pb.ReqRoleMenu, ou
 		out.Status = pb.ResultStatus_NotExisted
 		return errors.New("the role not found")
 	}
-	err := info.SubtractMenu(in.Menu)
-	if err != nil {
-		out.Status = pb.ResultStatus_DBException
+	var err error
+	for _, menu := range in.Menus {
+		err = info.SubtractMenu(menu)
 	}
+
 	out.Role = in.Role
 	out.Menus = info.Menus()
 	return err

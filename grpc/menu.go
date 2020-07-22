@@ -25,9 +25,14 @@ func switchMenu(info *cache.MenuInfo) *pb.MenuInfo {
 }
 
 func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.ReplyMenuInfo) error {
+	inLog("menu.add", in)
 	if len(in.Name) < 1 {
 		out.Status = pb.ResultStatus_Empty
-		return errors.New("the name is empty")
+		return errors.New("the menu name is empty")
+	}
+	if cache.HadMenuByName(in.Name) {
+		out.Status = pb.ResultStatus_Repeated
+		return errors.New("the menu name is existed")
 	}
 	info := new(cache.MenuInfo)
 	info.Name = in.Name
@@ -45,6 +50,7 @@ func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.R
 }
 
 func (mine *MenuService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyMenuInfo) error {
+	inLog("menu.get", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the menu uid is empty")
@@ -59,6 +65,7 @@ func (mine *MenuService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.
 }
 
 func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+	inLog("menu.remove", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the menu uid is empty")
@@ -77,6 +84,7 @@ func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 }
 
 func (mine *MenuService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyMenuList) error {
+	inLog("menu.all", in)
 	out.List = make([]*pb.MenuInfo, 0, 10)
 	for _, value := range cache.AllMenus() {
 		out.List = append(out.List, switchMenu(value))
@@ -85,6 +93,7 @@ func (mine *MenuService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.
 }
 
 func (mine *MenuService)UpdateBase(ctx context.Context, in *pb.ReqMenuUpdate, out *pb.ReplyMenuInfo) error {
+	inLog("menu.update", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the menu uid is empty")

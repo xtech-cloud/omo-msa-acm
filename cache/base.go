@@ -2,7 +2,6 @@ package cache
 
 import (
 	"github.com/casbin/casbin/v2"
-	mongodbadapter "github.com/casbin/mongodb-adapter/v2"
 	"omo.msa.acm/config"
 	"omo.msa.acm/proxy/nosql"
 	"time"
@@ -38,16 +37,34 @@ func InitData() error {
 		return err
 	}
 
-	url := config.Schema.Database.IP+":"+config.Schema.Database.Port
-	a,err1 := mongodbadapter.NewAdapter(url)
-	if err1 != nil {
-		return err1
+	//url := config.Schema.Database.IP+":"+config.Schema.Database.Port
+	//a,err1 := mongodbadapter.NewAdapter(url)
+	//if err1 != nil {
+	//	return err1
+	//}
+	//e, err2 := casbin.NewEnforcer("conf/acm.conf", a)
+	//if err2 != nil {
+	//	return err2
+	//}
+	//cacheCtx.enforcer = e
+
+	roles,err := nosql.GetAllRoles()
+	if err == nil {
+		for _, role := range roles {
+			t := new(RoleInfo)
+			t.initInfo(role)
+			cacheCtx.roles = append(cacheCtx.roles, t)
+		}
 	}
-	e, err2 := casbin.NewEnforcer("conf/acm.conf", a)
-	if err2 != nil {
-		return err2
+
+	menus,err1 := nosql.GetAllMenus()
+	if err1 == nil {
+		for _, menu := range menus {
+			t := new(MenuInfo)
+			t.initInfo(menu)
+			cacheCtx.menus = append(cacheCtx.menus, t)
+		}
 	}
-	cacheCtx.enforcer = e
 
 	users,err2 := nosql.GetAllUsers()
 	if err2 == nil {
@@ -57,6 +74,7 @@ func InitData() error {
 			cacheCtx.users = append(cacheCtx.users, t)
 		}
 	}
-	return cacheCtx.enforcer.LoadPolicy()
+	//return cacheCtx.enforcer.LoadPolicy()
+	return nil
 }
 

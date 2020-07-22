@@ -7,8 +7,11 @@ import (
 	"time"
 )
 
+type UserType uint8
+
 type UserInfo struct {
 	BaseInfo
+	Type UserType
 	User  string
 	roles []*RoleInfo
 }
@@ -57,6 +60,7 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	mine.Operator = db.Operator
 	mine.Creator = db.Creator
 	mine.User = db.User
+	mine.Type = UserType(db.Type)
 	mine.roles = make([]*RoleInfo, 0, len(db.Roles))
 	for _, role := range db.Roles {
 		info := GetRole(role)
@@ -66,14 +70,16 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	}
 }
 
-func (mine *UserInfo)Create(roles []string) error {
+func (mine *UserInfo)Create(tp UserType, roles []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
 	db.CreatedTime = time.Now()
 	db.UpdatedTime = time.Now()
 	db.User = mine.User
+	db.Operator = mine.Operator
 	db.Roles = roles
+	db.Type = uint8(tp)
 	if db.Roles == nil {
 		db.Roles = make([]string, 0, 1)
 	}
@@ -100,6 +106,9 @@ func (mine *UserInfo)Remove(operator string) error {
 }
 
 func (mine *UserInfo)IsPermission(path string, action string) bool {
+	if mine.Type < 5 {
+		return true
+	}
 	for _, role := range mine.roles {
 		if role.hadMenu(path, action) {
 			return true
@@ -134,7 +143,7 @@ func (mine *UserInfo)AppendRole(info *RoleInfo) error {
 		return errors.New("the role is nil")
 	}
 	if mine.HadRole(info.UID) {
-		return errors.New("the role had exist for user")
+		return nil
 	}
 	err := nosql.AppendUserRole(mine.UID, info.UID)
 	if err == nil {
@@ -148,7 +157,7 @@ func (mine *UserInfo)SubtractRole(role string) error {
 		return errors.New("the role uid is empty")
 	}
 	if !mine.HadRole(role) {
-		return errors.New("the role not existed for user")
+		return nil
 	}
 	err := nosql.SubtractUserRole(mine.UID, role)
 	if err == nil {

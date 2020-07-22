@@ -18,13 +18,20 @@ func switchUser(info *cache.UserInfo) *pb.UserLink {
 }
 
 func (mine *UserService)AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.ReplyUserLink) error {
+	inLog("user.add", in)
 	if len(in.User) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user is empty")
 	}
+	tmp := cache.GetUser(in.User)
+	if tmp != nil {
+		out.Info = switchUser(tmp)
+		return nil
+	}
 	info := new(cache.UserInfo)
 	info.User = in.User
-	err := info.Create(in.Roles)
+	info.Operator = in.Operator
+	err := info.Create(cache.UserType(in.Type), in.Roles)
 	if err == nil {
 		out.Info = switchUser(info)
 	}else{
@@ -35,6 +42,7 @@ func (mine *UserService)AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.R
 }
 
 func (mine *UserService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyUserLink) error {
+	inLog("user.get", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -49,6 +57,7 @@ func (mine *UserService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.
 }
 
 func (mine *UserService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+	inLog("user.remove", in)
 	if len(in.Uid) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -66,6 +75,7 @@ func (mine *UserService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 }
 
 func (mine *UserService)GetList(ctx context.Context, in *pb.ReqUserList, out *pb.ReplyUserList) error {
+	inLog("user.list", in)
 	out.Users = make([]*pb.UserLink, 0, in.Number)
 	for i, value := range cache.AllUsers() {
 		t := int32(i) / in.Number + 1
@@ -77,6 +87,7 @@ func (mine *UserService)GetList(ctx context.Context, in *pb.ReqUserList, out *pb
 }
 
 func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermission, out *pb.ReplyUserPermission) error {
+	inLog("user.permission", in)
 	if len(in.User) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
@@ -91,40 +102,36 @@ func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermis
 	return nil
 }
 
-func (mine *UserService) AppendRole (ctx context.Context, in *pb.ReqLinkRole, out *pb.ReplyLinkRole) error {
-	if len(in.User) < 1 || len(in.Role) < 1 {
+func (mine *UserService) AppendRole (ctx context.Context, in *pb.ReqUserAdd, out *pb.ReplyLinkRole) error {
+	inLog("user.append", in)
+	if len(in.User) < 1 || len(in.Roles) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")
 	}
 	var user *cache.UserInfo
 	user = cache.GetUser(in.User)
 	if user == nil {
-		array := make([]string, 0,1)
-		array = append(array, in.Role)
 		info := new(cache.UserInfo)
 		info.User = in.User
-		err := info.Create(array)
+		err := info.Create(cache.UserType(in.Type), in.Roles)
 		if err != nil {
 			out.Status = pb.ResultStatus_NotExisted
 			return errors.New(err.Error())
 		}
 		user = info
 	}
-	role := cache.GetRole(in.Role)
-	if role == nil {
-		out.Status = pb.ResultStatus_NotExisted
-		return errors.New("the role not found")
+	var err error
+	for _, item := range in.Roles {
+		err = user.AppendRole(cache.GetRole(item))
 	}
-	err := user.AppendRole(role)
-	if err != nil {
-		out.Status = pb.ResultStatus_DBException
-	}
+
 	out.User = in.User
 	out.Roles = user.Roles()
 	return err
 }
 
 func (mine *UserService) SubtractRole (ctx context.Context, in *pb.ReqLinkRole, out *pb.ReplyLinkRole) error {
+	inLog("user.subtract", in)
 	if len(in.User) < 1 {
 		out.Status = pb.ResultStatus_Empty
 		return errors.New("the user uid is empty")

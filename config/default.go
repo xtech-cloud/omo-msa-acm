@@ -2,7 +2,7 @@ package config
 
 const defaultYAML string = `
 service:
-    address: :7078
+    address: :7077
     ttl: 15
     interval: 10
 logger:

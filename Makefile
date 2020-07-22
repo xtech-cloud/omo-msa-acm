@@ -26,8 +26,7 @@ run:
 
 .PHONY: call
 call:
-	MICRO_REGISTRY=consul micro call omo.msa.acm UserService.RemoveOne '{"uid":"John"}'
-	MICRO_REGISTRY=consul micro call omo.msa.acm UserService.GetList '{"page":3, "number":5}'
+	MICRO_REGISTRY=consul micro call omo.msa.acm UserService.IsPermission '{"user":"Tom4", "path":"omo/msa/acm/menu/remove", "action":"get"}'
 
 .PHONY: tester
 tester:

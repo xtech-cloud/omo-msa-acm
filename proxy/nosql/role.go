@@ -50,7 +50,7 @@ func GetRole(uid string) (*Role, error) {
 
 func GetAllRoles() ([]*Role, error) {
 	var items = make([]*Role, 0, 10)
-	cursor, err1 := findAll(TableMenu, 0)
+	cursor, err1 := findAll(TableRole, 0)
 	if err1 != nil {
 		return nil, err1
 	}

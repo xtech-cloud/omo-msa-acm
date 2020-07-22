@@ -33,6 +33,15 @@ func GetRole(uid string) *RoleInfo {
 	return nil
 }
 
+func HadRoleByName(name string) bool {
+	for i := 0;i < len(cacheCtx.roles);i += 1{
+		if cacheCtx.roles[i].Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (mine *RoleInfo)initInfo(db *nosql.Role)  {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
@@ -60,7 +69,7 @@ func (mine *RoleInfo)Create(menus []string) error {
 	db.Name = mine.Name
 	db.Remark = mine.Remark
 	db.Menus = menus
-	db.Creator = mine.Operator
+	db.Creator = mine.Creator
 	if db.Menus == nil {
 		db.Menus = make([]string, 0, 1)
 	}
@@ -98,8 +107,14 @@ func (mine *RoleInfo)Remove(operator string) error {
 
 func (mine *RoleInfo)hadMenu(path string, act string) bool {
 	for i := 0;i < len(mine.menus);i += 1{
-		if mine.menus[i].Path == path && mine.menus[i].Method == act {
-			return true
+		if len(act) < 1 {
+			if mine.menus[i].Path == path {
+				return true
+			}
+		}else{
+			if mine.menus[i].Path == path && mine.menus[i].Method == act {
+				return true
+			}
 		}
 	}
 	return false
@@ -131,7 +146,7 @@ func (mine *RoleInfo)AppendMenu(menu *MenuInfo) error {
 		return errors.New("the menu is nil")
 	}
 	if mine.HadMenu(menu.UID) {
-		return errors.New("the menu had exist for role")
+		return nil
 	}
 	err := nosql.AppendRoleMenu(mine.UID, menu.UID)
 	if err == nil {
@@ -145,7 +160,7 @@ func (mine *RoleInfo)SubtractMenu(menu string) error {
 		return errors.New("the menu uid is empty")
 	}
 	if !mine.HadMenu(menu) {
-		return errors.New("the menu not existed for role")
+		return nil
 	}
 	err := nosql.SubtractRoleMenu(mine.UID, menu)
 	if err == nil {
