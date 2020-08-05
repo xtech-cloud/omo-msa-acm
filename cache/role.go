@@ -51,13 +51,7 @@ func (mine *RoleInfo)initInfo(db *nosql.Role)  {
 	mine.Remark = db.Remark
 	mine.Operator = db.Operator
 	mine.Creator = db.Creator
-	mine.menus = make([]*MenuInfo, 0, len(db.Menus))
-	for _, menu := range db.Menus {
-		info := GetMenu(menu)
-		if info != nil {
-			mine.menus = append(mine.menus, info)
-		}
-	}
+	mine.updateMenus(db.Menus)
 }
 
 func (mine *RoleInfo)Create(menus []string) error {
@@ -82,12 +76,29 @@ func (mine *RoleInfo)Create(menus []string) error {
 	return err
 }
 
-func (mine *RoleInfo)Update(name, remark, operator string) error {
+func (mine *RoleInfo)updateMenus(menus []string)  {
+	if menus == nil {
+		mine.menus = make([]*MenuInfo, 0, 1)
+		return
+	}
+	if len(mine.menus) > 0 {
+		mine.menus = mine.menus[:0]
+	}
+	for _, menu := range menus {
+		info := GetMenu(menu)
+		if info != nil {
+			mine.menus = append(mine.menus, info)
+		}
+	}
+}
+
+func (mine *RoleInfo)Update(name, remark, operator string, menus []string) error {
 	err := nosql.UpdateRoleBase(mine.UID, name, remark, operator)
 	if err == nil {
 		mine.Name = name
 		mine.Remark = remark
 		mine.Operator = operator
+		mine.updateMenus(menus)
 	}
 	return err
 }

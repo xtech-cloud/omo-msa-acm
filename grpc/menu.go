@@ -75,6 +75,10 @@ func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 		out.Status = pb.ResultStatus_NotExisted
 		return errors.New("the menu not found")
 	}
+	if info.Creator == "system" {
+		out.Status = pb.ResultStatus_DBException
+		return errors.New("the system menu not allow to delete")
+	}
 	err := info.Remove(in.Operator)
 	if err != nil {
 		out.Status = pb.ResultStatus_DBException

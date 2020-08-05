@@ -2,7 +2,10 @@ module omo.msa.acm
 
 go 1.13
 
-replace google.golang.org/grpc => github.com/grpc/grpc-go v1.26.0
+replace (
+	golang.org/x/text => github.com/golang/text v0.3.3
+	google.golang.org/grpc => github.com/grpc/grpc-go v1.26.0
+)
 
 require (
 	github.com/casbin/casbin/v2 v2.7.2
@@ -15,7 +18,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tidwall/gjson v1.6.0
-	github.com/xtech-cloud/omo-msp-acm v1.0.6
+	github.com/xtech-cloud/omo-msp-acm v1.0.7
 	go.mongodb.org/mongo-driver v1.3.5
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4

@@ -75,6 +75,10 @@ func (mine *RoleService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 		out.Status = pb.ResultStatus_NotExisted
 		return errors.New("the role not found")
 	}
+	if info.Creator == "system" {
+		out.Status = pb.ResultStatus_DBException
+		return errors.New("the system role not allow to delete")
+	}
 	err := info.Remove(in.Operator)
 	if err != nil {
 		out.Status = pb.ResultStatus_DBException
@@ -102,7 +106,7 @@ func (mine *RoleService)UpdateBase(ctx context.Context, in *pb.ReqRoleUpdate, ou
 		out.Status = pb.ResultStatus_NotExisted
 		return errors.New("the role not found")
 	}
-	err := info.Update(in.Name, in.Remark, in.Operator)
+	err := info.Update(in.Name, in.Remark, in.Operator, in.Menus)
 	if err != nil {
 		out.Status = pb.ResultStatus_DBException
 	}else{
