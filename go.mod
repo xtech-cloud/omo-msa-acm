@@ -1,6 +1,6 @@
 module omo.msa.acm
 
-go 1.13
+go 1.15
 
 replace (
 	golang.org/x/text => github.com/golang/text v0.3.3
@@ -18,7 +18,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tidwall/gjson v1.6.0
-	github.com/xtech-cloud/omo-msp-acm v1.0.7
+	github.com/xtech-cloud/omo-msp-acm v1.1.1
 	go.mongodb.org/mongo-driver v1.3.5
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4

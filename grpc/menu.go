@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	pb "github.com/xtech-cloud/omo-msp-acm/proto/acm"
 	"omo.msa.acm/cache"
 )
@@ -25,14 +25,15 @@ func switchMenu(info *cache.MenuInfo) *pb.MenuInfo {
 }
 
 func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.ReplyMenuInfo) error {
-	inLog("menu.add", in)
+	path := "menu.addOne"
+	inLog(path, in)
 	if len(in.Name) < 1 {
-		out.Status = pb.ResultStatus_Empty
-		return errors.New("the menu name is empty")
+		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		return nil
 	}
 	if cache.HadMenuByName(in.Name) {
-		out.Status = pb.ResultStatus_Repeated
-		return errors.New("the menu name is existed")
+		out.Status = outError(path,"the menu name is existed", pb.ResultCode_Repeated)
+		return nil
 	}
 	info := new(cache.MenuInfo)
 	info.Name = in.Name
@@ -41,76 +42,86 @@ func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.R
 	info.Method = in.Method
 	info.Creator = in.Operator
 	err := info.Create()
-	if err == nil {
-		out.Info = switchMenu(info)
-	}else{
-		out.Status = pb.ResultStatus_DBException
+	if err != nil {
+		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		return nil
 	}
-	return err
+	out.Info = switchMenu(info)
+	out.Status = outLog(path, out)
+	return nil
 }
 
 func (mine *MenuService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyMenuInfo) error {
-	inLog("menu.get", in)
+	path := "menu.getOne"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = pb.ResultStatus_Empty
-		return errors.New("the menu uid is empty")
+		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = pb.ResultStatus_NotExisted
-		return errors.New("the menu not found")
+		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		return nil
 	}
 	out.Info = switchMenu(info)
+	out.Status = outLog(path, out)
 	return nil
 }
 
 func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
-	inLog("menu.remove", in)
+	path := "menu.removeOne"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = pb.ResultStatus_Empty
-		return errors.New("the menu uid is empty")
+		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = pb.ResultStatus_NotExisted
-		return errors.New("the menu not found")
+		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		return nil
 	}
 	if info.Creator == "system" {
-		out.Status = pb.ResultStatus_DBException
-		return errors.New("the system menu not allow to delete")
+		out.Status = outError(path,"the system menu not allow to delete", pb.ResultCode_DBException)
+		return nil
 	}
 	err := info.Remove(in.Operator)
 	if err != nil {
-		out.Status = pb.ResultStatus_DBException
+		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		return nil
 	}
 	out.Uid = in.Uid
+	out.Status = outLog(path, out)
 	return err
 }
 
 func (mine *MenuService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyMenuList) error {
-	inLog("menu.all", in)
+	inLog("menu.getAll", in)
 	out.List = make([]*pb.MenuInfo, 0, 10)
 	for _, value := range cache.AllMenus() {
 		out.List = append(out.List, switchMenu(value))
 	}
+	out.Status = outLog("menu.getAll", fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }
 
 func (mine *MenuService)UpdateBase(ctx context.Context, in *pb.ReqMenuUpdate, out *pb.ReplyMenuInfo) error {
-	inLog("menu.update", in)
+	path := "menu.updateBase"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = pb.ResultStatus_Empty
-		return errors.New("the menu uid is empty")
+		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = pb.ResultStatus_NotExisted
-		return errors.New("the menu not found")
+		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		return nil
 	}
 	err := info.Update(in.Name, in.Type, in.Path, in.Method, in.Operator)
 	if err != nil {
-		out.Status = pb.ResultStatus_DBException
+		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		return nil
 	}
 	out.Info = switchMenu(info)
-	return err
+	out.Status = outLog(path, out)
+	return nil
 }

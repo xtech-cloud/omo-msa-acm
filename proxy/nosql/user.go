@@ -85,6 +85,12 @@ func RemoveUser(uid, operator string) error {
 	return err
 }
 
+func UpdateUserRoles(uid, operator string, roles []string) error {
+	msg := bson.M{"roles": roles, "operator":operator,  "updatedAt": time.Now()}
+	_, err := updateOne(TableUserRoles, uid, msg)
+	return err
+}
+
 func AppendUserRole(uid string, role string) error {
 	if len(uid) < 1 {
 		return errors.New("the uid is empty")

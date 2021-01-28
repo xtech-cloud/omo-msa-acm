@@ -93,7 +93,7 @@ func (mine *UserInfo)Create(tp UserType, roles []string) error {
 }
 
 func (mine *UserInfo)Remove(operator string) error {
-	err := nosql.RemoveUser(mine.UID, operator)
+	err := nosql.UpdateUserRoles(mine.UID, operator, make([]string, 0, 1))
 	if err == nil {
 		for i := 0;i < len(cacheCtx.users);i += 1 {
 			if cacheCtx.users[i].UID == mine.UID {
