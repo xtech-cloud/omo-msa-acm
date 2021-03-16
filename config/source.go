@@ -2,7 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"os"
 	"time"
 
@@ -16,17 +17,16 @@ import (
 	"github.com/micro/go-plugins/config/source/consul/v2"
 	logrusPlugin "github.com/micro/go-plugins/logger/logrus/v2"
 	"github.com/sirupsen/logrus"
-	goYAML "gopkg.in/yaml.v2"
 )
 
-type Define struct {
+type EnvConfig struct {
 	Source  string   `json:source`
 	Prefix  string   `json:prefix`
 	Key     string   `json:key`
 	Address []string `json:address`
 }
 
-var configDefine Define
+var envConfig EnvConfig
 
 var Schema SchemaConfig
 
@@ -54,14 +54,14 @@ func setupEnvironment() {
 	}
 
 	logger.Infof("MSA_CONFIG_DEFINE is %v", envConfigDefine)
-	err := json.Unmarshal([]byte(envConfigDefine), &configDefine)
+	err := json.Unmarshal([]byte(envConfigDefine), &envConfig)
 	if err != nil {
 		logger.Error(err)
 	}
 }
 
 func mergeFile(_config config.Config) {
-	filepath := configDefine.Prefix + configDefine.Key
+	filepath := envConfig.Prefix + envConfig.Key
 	fileSource := file.NewSource(
 		file.WithPath(filepath),
 	)
@@ -75,18 +75,18 @@ func mergeFile(_config config.Config) {
 }
 
 func mergeConsul(_config config.Config) {
-	consulKey := configDefine.Prefix + configDefine.Key
+	consulKey := envConfig.Prefix + envConfig.Key
+	consulSource := consul.NewSource(
+		consul.WithPrefix(envConfig.Prefix),
+		consul.StripPrefix(true),
+		source.WithEncoder(yaml.NewEncoder()),
+	)
 Loop:
 	for {
 		select {
 		case <-time.After(time.Second * time.Duration(1)):
-			for _, addr := range configDefine.Address {
-				consulSource := consul.NewSource(
-					consul.WithAddress(addr),
-					consul.WithPrefix(configDefine.Prefix),
-					consul.StripPrefix(true),
-					source.WithEncoder(yaml.NewEncoder()),
-				)
+			for _, addr := range envConfig.Address {
+				consul.WithAddress(addr)
 				err := _config.Load(consulSource)
 				if nil == err {
 					logger.Infof("load config %v from %v success", consulKey, addr)
@@ -97,27 +97,58 @@ Loop:
 			}
 		}
 	}
-	_config.Get(configDefine.Key).Scan(&Schema)
+	_config.Get(envConfig.Key).Scan(&Schema)
 }
 
 func mergeEtcd(_config config.Config) {
-	etcdKey := configDefine.Prefix + configDefine.Key
-	for _, addr := range configDefine.Address {
-		etcdSource := etcd.NewSource(
-			etcd.WithAddress(addr),
-			etcd.WithPrefix(configDefine.Prefix),
-			etcd.StripPrefix(true),
-			source.WithEncoder(yaml.NewEncoder()),
-		)
-		err := _config.Load(etcdSource)
-		if nil == err {
-			logger.Infof("load config %v from %v success", etcdKey, addr)
-			break
-		} else {
-			logger.Errorf("load config %v from %v failed: %v", etcdKey, addr, err)
+	etcdKey := envConfig.Prefix + envConfig.Key
+	etcdSource := etcd.NewSource(
+		etcd.WithPrefix(envConfig.Prefix),
+		etcd.StripPrefix(true),
+		source.WithEncoder(yaml.NewEncoder()),
+	)
+Loop:
+	for {
+		select {
+		case <-time.After(time.Second * time.Duration(2)):
+			for _, addr := range envConfig.Address {
+				etcd.WithAddress(addr)
+				err := _config.Load(etcdSource)
+				if nil == err {
+					logger.Infof("load config %v from %v success", etcdKey, addr)
+					break Loop
+				} else {
+					logger.Errorf("load config %v from %v failed: %v", etcdKey, addr, err)
+				}
+			}
 		}
 	}
-	_config.Get(configDefine.Key).Scan(&Schema)
+	_config.Get(envConfig.Key).Scan(&Schema)
+}
+
+func getLoggerOut() io.Writer {
+	path := Schema.Logger.File
+	logger.Info("logger path = " + path)
+	log :=&lumberjack.Logger{
+		LocalTime:  true,
+		Filename:   path,
+		MaxSize:    20, // megabytes
+		MaxBackups: 20,
+		MaxAge:     0,    //days
+		Compress:   false, // disabled by default
+	}
+	if Schema.Logger.Std {
+		writers := []io.Writer{
+			log,
+			os.Stdout,
+		}
+		return io.MultiWriter(writers...)
+	}else{
+		writers := []io.Writer{
+			log,
+		}
+		return io.MultiWriter(writers...)
+	}
 }
 
 func Setup() {
@@ -126,10 +157,53 @@ func Setup() {
 		mode = "debug"
 	}
 
+	setupEnvironment()
+	conf, err := config.NewConfig()
+	if nil != err {
+		panic(err)
+	}
+
+	// load default config
+	logger.Infof("default config is: \n\r%v", defaultJson)
+	memorySource := memory.NewSource(
+		memory.WithJSON([]byte(defaultJson)),
+	)
+	conf.Load(memorySource)
+	err1 := conf.Scan(&Schema)
+	if err1 != nil {
+		panic(err1)
+		return
+	}
+
+	// merge others
+	if "file" == envConfig.Source {
+		mergeFile(conf)
+	} else if "consul" == envConfig.Source {
+		if mode != "debug" {
+			mergeConsul(conf)
+		}
+	} else if "etcd" == envConfig.Source {
+		if mode != "debug" {
+			mergeEtcd(conf)
+		}
+	}
+
 	// initialize logger
+	initLogger(mode)
+
+	ycd, err := json.Marshal(&Schema)
+	if nil != err {
+		logger.Error(err)
+	} else {
+		logger.Infof("current config is: \n\r%v", string(ycd))
+	}
+}
+
+func initLogger(mode string)  {
+	out := getLoggerOut()
 	if "debug" == mode {
 		logger.DefaultLogger = logrusPlugin.NewLogger(
-			logger.WithOutput(os.Stdout),
+			logger.WithOutput(out),
 			logger.WithLevel(logger.TraceLevel),
 			logrusPlugin.WithTextTextFormatter(new(logrus.TextFormatter)),
 		)
@@ -140,7 +214,7 @@ func Setup() {
 		logger.Warn("- using env:	export MSA_MODE=release")
 	} else {
 		logger.DefaultLogger = logrusPlugin.NewLogger(
-			logger.WithOutput(os.Stdout),
+			logger.WithOutput(out),
 			logger.WithLevel(logger.TraceLevel),
 			logrusPlugin.WithJSONFormatter(new(logrus.JSONFormatter)),
 		)
@@ -148,45 +222,6 @@ func Setup() {
 		logger.Info("- Micro Service Agent -> Setup")
 		logger.Info("-------------------------------------------------------------")
 	}
-
-	conf, err := config.NewConfig()
-	if nil != err {
-		panic(err)
-	}
-
-	setupEnvironment()
-
-	// load default config
-	logger.Tracef("default config is: \n\r%v", defaultYAML)
-	memorySource := memory.NewSource(
-		memory.WithYAML([]byte(defaultYAML)),
-	)
-	conf.Load(memorySource)
-	err1 := conf.Scan(&Schema)
-	if err1 != nil {
-		panic(err1)
-		return
-	}
-	fmt.Println(Schema)
-
-	// merge others
-	if "file" == configDefine.Source {
-		mergeFile(conf)
-	} else if "consul" == configDefine.Source {
-		if mode != "debug" {
-			mergeConsul(conf)
-		}
-	} else if "etcd" == configDefine.Source {
-		mergeEtcd(conf)
-	}
-
-	ycd, err := goYAML.Marshal(&Schema)
-	if nil != err {
-		logger.Error(err)
-	} else {
-		logger.Tracef("current config is: \n\r%v", string(ycd))
-	}
-
 	level, err := logger.GetLevel(Schema.Logger.Level)
 	if nil != err {
 		logger.Warnf("the level %v is invalid, just use info level", Schema.Logger.Level)
@@ -206,5 +241,4 @@ func Setup() {
 	logger.Init(
 		logger.WithLevel(level),
 	)
-
 }
