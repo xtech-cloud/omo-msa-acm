@@ -19,7 +19,7 @@ type Role struct {
 
 	Name   string                `json:"name" bson:"name"`
 	Remark  string                `json:"remark" bson:"remark"`
-	Menus  []string `json:"menus" bson:"menus"`
+	Menus  []string 		`json:"menus" bson:"menus"`
 }
 
 func CreateRole(info *Role) error {

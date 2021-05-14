@@ -17,9 +17,10 @@ type UserLink struct {
 	Creator string `json:"creator" bson:"creator"`
 	Operator string `json:"operator" bson:"operator"`
 
-	Type uint8 `json:"type" bson:"type"`
+	Type uint8 						`json:"type" bson:"type"`
 	User   string                	`json:"user" bson:"user"`
 	Roles  []string                `json:"roles" bson:"roles"`
+	Links  []string 				`json:"links" bson:"links"`
 }
 
 func CreateUser(info *UserLink) error {
@@ -85,8 +86,20 @@ func RemoveUser(uid, operator string) error {
 	return err
 }
 
-func UpdateUserRoles(uid, operator string, roles []string) error {
-	msg := bson.M{"roles": roles, "operator":operator,  "updatedAt": time.Now()}
+func RemoveUserPermissions(uid, operator string) error {
+	msg := bson.M{"roles": make([]string, 0, 1), "links": make([]string, 0, 1), "operator":operator,  "updatedAt": time.Now()}
+	_, err := updateOne(TableUserRoles, uid, msg)
+	return err
+}
+
+func UpdateUserRoles(uid, operator string, list []string) error {
+	msg := bson.M{"roles": list, "operator":operator,  "updatedAt": time.Now()}
+	_, err := updateOne(TableUserRoles, uid, msg)
+	return err
+}
+
+func UpdateUserLinks(uid, operator string, list []string) error {
+	msg := bson.M{"links": list, "operator":operator,  "updatedAt": time.Now()}
 	_, err := updateOne(TableUserRoles, uid, msg)
 	return err
 }
@@ -108,4 +121,6 @@ func SubtractUserRole(uid string, role string) error {
 	_, err := removeElement(TableUserRoles, uid, msg)
 	return err
 }
+
+
 

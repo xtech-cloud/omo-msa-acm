@@ -14,6 +14,7 @@ func switchUser(info *cache.UserInfo) *pb.UserLink {
 	tmp.Uid = info.UID
 	tmp.User = info.User
 	tmp.Roles = info.Roles()
+	tmp.Links = info.Links
 	return tmp
 }
 
@@ -33,7 +34,7 @@ func (mine *UserService)AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.R
 	info := new(cache.UserInfo)
 	info.User = in.User
 	info.Operator = in.Operator
-	err := info.Create(cache.UserType(in.Type), in.Roles)
+	err := info.Create(cache.UserType(in.Type), in.Roles, in.Links)
 	if err != nil {
 		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
 		return nil
@@ -113,11 +114,11 @@ func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermis
 	return nil
 }
 
-func (mine *UserService) AppendRole (ctx context.Context, in *pb.ReqUserAdd, out *pb.ReplyLinkRole) error {
-	path := "user.appendRole"
+func (mine *UserService) UpdateRoles (ctx context.Context, in *pb.ReqUserLinks, out *pb.ReplyUserLinks) error {
+	path := "user.updateRoles"
 	inLog(path, in)
-	if len(in.User) < 1 || len(in.Roles) < 1 {
-		out.Status = outError(path,"the user uid is empty", pb.ResultCode_Empty)
+	if len(in.User) < 1 {
+		out.Status = outError(path,"the user or uid is empty", pb.ResultCode_Empty)
 		return nil
 	}
 	var user *cache.UserInfo
@@ -125,47 +126,52 @@ func (mine *UserService) AppendRole (ctx context.Context, in *pb.ReqUserAdd, out
 	if user == nil {
 		info := new(cache.UserInfo)
 		info.User = in.User
-		err := info.Create(cache.UserType(in.Type), in.Roles)
+		err := info.Create(cache.UserType(1), in.List, nil)
 		if err != nil {
 			out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
 			return nil
 		}
 		user = info
 	}
-	var err error
-	for _, item := range in.Roles {
-		err = user.AppendRole(cache.GetRole(item))
-	}
+	err := user.UpdateRoles(in.List, in.Operator)
 	if err != nil {
 		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
 		return nil
 	}
 
 	out.User = in.User
-	out.Roles = user.Roles()
+	out.List = user.Roles()
 	out.Status = outLog(path, out)
 	return nil
 }
 
-func (mine *UserService) SubtractRole (ctx context.Context, in *pb.ReqLinkRole, out *pb.ReplyLinkRole) error {
-	path := "user.appendRole"
+func (mine *UserService) UpdateLinks (ctx context.Context, in *pb.ReqUserLinks, out *pb.ReplyUserLinks) error {
+	path := "user.updateLinks"
 	inLog(path, in)
 	if len(in.User) < 1 {
-		out.Status = outError(path,"the user uid is empty", pb.ResultCode_Empty)
+		out.Status = outError(path,"the user or uid is empty", pb.ResultCode_Empty)
 		return nil
 	}
-	info := cache.GetUser(in.User)
-	if info == nil {
-		out.Status = outError(path,"the user not found", pb.ResultCode_NotExisted)
-		return nil
+	var user *cache.UserInfo
+	user = cache.GetUser(in.User)
+	if user == nil {
+		info := new(cache.UserInfo)
+		info.User = in.User
+		err := info.Create(cache.UserType(1),nil, in.List)
+		if err != nil {
+			out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+			return nil
+		}
+		user = info
 	}
-	err := info.SubtractRole(in.Role)
+	err := user.UpdateLinks(in.List, in.Operator)
 	if err != nil {
 		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
 		return nil
 	}
+
 	out.User = in.User
-	out.Roles = info.Roles()
+	out.List = user.Links
 	out.Status = outLog(path, out)
 	return nil
 }

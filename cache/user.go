@@ -13,6 +13,7 @@ type UserInfo struct {
 	BaseInfo
 	Type UserType
 	User  string
+	Links []string
 	roles []*RoleInfo
 }
 
@@ -70,7 +71,7 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	}
 }
 
-func (mine *UserInfo)Create(tp UserType, roles []string) error {
+func (mine *UserInfo)Create(tp UserType, roles, links []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
@@ -79,6 +80,10 @@ func (mine *UserInfo)Create(tp UserType, roles []string) error {
 	db.User = mine.User
 	db.Operator = mine.Operator
 	db.Roles = roles
+	db.Links = links
+	if db.Links == nil {
+		db.Links = make([]string, 0, 1)
+	}
 	db.Type = uint8(tp)
 	if db.Roles == nil {
 		db.Roles = make([]string, 0, 1)
@@ -93,7 +98,7 @@ func (mine *UserInfo)Create(tp UserType, roles []string) error {
 }
 
 func (mine *UserInfo)Remove(operator string) error {
-	err := nosql.UpdateUserRoles(mine.UID, operator, make([]string, 0, 1))
+	err := nosql.RemoveUserPermissions(mine.UID, operator)
 	if err == nil {
 		for i := 0;i < len(cacheCtx.users);i += 1 {
 			if cacheCtx.users[i].UID == mine.UID {
@@ -136,6 +141,37 @@ func (mine *UserInfo)Roles() []string {
 		list = append(list, role.UID)
 	}
 	return list
+}
+
+func (mine *UserInfo)UpdateLinks(list []string, operator string) error {
+	if list == nil {
+		return errors.New("the links is nil")
+	}
+	err := nosql.UpdateUserLinks(mine.UID, operator, list)
+	if err == nil {
+		mine.Links = list
+	}
+	return err
+}
+
+func (mine *UserInfo)UpdateRoles(list []string, operator string) error {
+	if list == nil {
+		return errors.New("the roles is nil")
+	}
+	array := make([]string, 0, len(list))
+	roles := make([]*RoleInfo, 0, len(list))
+	for i := 0;i < len(list);i +=1 {
+		role := GetRole(list[i])
+		if role != nil {
+			roles = append(roles, role)
+			array = append(array, list[i])
+		}
+	}
+	err := nosql.UpdateUserRoles(mine.UID, operator, array)
+	if err == nil {
+		mine.roles = roles
+	}
+	return err
 }
 
 func (mine *UserInfo)AppendRole(info *RoleInfo) error {

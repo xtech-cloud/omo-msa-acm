@@ -11,4 +11,5 @@ const (
 	TableSequence  = "sequences"
 	TableUserRoles = "acm_users"
 	TableMenu      = "acm_menus"
+	TableCatalog      = "acm_catalogs"
 )

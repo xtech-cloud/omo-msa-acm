@@ -60,7 +60,7 @@ func (mine *MenuInfo)initInfo(db *nosql.Menu)  {
 func (mine *MenuInfo)Create() error {
 	db := new(nosql.Menu)
 	db.UID = primitive.NewObjectID()
-	db.ID = nosql.GetRoleNextID()
+	db.ID = nosql.GetMenuNextID()
 	db.CreatedTime = time.Now()
 	db.UpdatedTime = time.Now()
 	db.Name = mine.Name

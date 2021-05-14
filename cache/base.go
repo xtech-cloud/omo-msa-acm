@@ -21,6 +21,7 @@ type cacheContext struct {
 	users    []*UserInfo
 	roles    []*RoleInfo
 	menus    []*MenuInfo
+	catalogs []*CatalogInfo
 	enforcer *casbin.Enforcer
 }
 
@@ -31,7 +32,7 @@ func InitData() error {
 	cacheCtx.roles = make([]*RoleInfo, 0, 10)
 	cacheCtx.users = make([]*UserInfo, 0, 100)
 	cacheCtx.menus = make([]*MenuInfo, 0, 100)
-
+	cacheCtx.catalogs = make([]*CatalogInfo, 0, 20)
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
 	if nil != err {
 		return err
@@ -63,6 +64,15 @@ func InitData() error {
 			t := new(MenuInfo)
 			t.initInfo(menu)
 			cacheCtx.menus = append(cacheCtx.menus, t)
+		}
+	}
+
+	catalogs,err3 := nosql.GetAllCatalogs()
+	if err3 == nil {
+		for _, menu := range catalogs {
+			t := new(CatalogInfo)
+			t.initInfo(menu)
+			cacheCtx.catalogs = append(cacheCtx.catalogs, t)
 		}
 	}
 

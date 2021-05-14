@@ -43,6 +43,7 @@ func main() {
 	_ = proto.RegisterUserServiceHandler(service.Server(), new(grpc.UserService))
 	_ = proto.RegisterRoleServiceHandler(service.Server(), new(grpc.RoleService))
 	_ = proto.RegisterMenuServiceHandler(service.Server(), new(grpc.MenuService))
+	_ = proto.RegisterCatalogServiceHandler(service.Server(), new(grpc.CatalogService))
 
 	app, _ := filepath.Abs(os.Args[0])
 
