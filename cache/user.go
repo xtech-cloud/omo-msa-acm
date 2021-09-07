@@ -110,12 +110,12 @@ func (mine *UserInfo)Remove(operator string) error {
 	return err
 }
 
-func (mine *UserInfo)IsPermission(path string, action string) bool {
+func (mine *UserInfo)IsPermission(path string) bool {
 	if mine.Type < 5 {
 		return true
 	}
 	for _, role := range mine.roles {
-		if role.hadMenu(path, action) {
+		if role.hadMenu(path) {
 			return true
 		}
 	}

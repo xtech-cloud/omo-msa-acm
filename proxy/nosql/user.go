@@ -24,7 +24,7 @@ type UserLink struct {
 }
 
 func CreateUser(info *UserLink) error {
-	_, err := insertOne(TableUserRoles, info)
+	_, err := insertOne(TableUsers, info)
 	if err != nil {
 		return err
 	}
@@ -32,12 +32,12 @@ func CreateUser(info *UserLink) error {
 }
 
 func GetUserNextID() uint64 {
-	num, _ := getSequenceNext(TableUserRoles)
+	num, _ := getSequenceNext(TableUsers)
 	return num
 }
 
 func GetUser(uid string) (*UserLink, error) {
-	result, err := findOne(TableUserRoles, uid)
+	result, err := findOne(TableUsers, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func GetUser(uid string) (*UserLink, error) {
 
 func GetAllUsers() ([]*UserLink, error) {
 	var items = make([]*UserLink, 0, 100)
-	cursor, err1 := findAll(TableUserRoles, 0)
+	cursor, err1 := findAll(TableUsers, 0)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -69,7 +69,7 @@ func GetAllUsers() ([]*UserLink, error) {
 
 func GetUserLink(user string) (*UserLink, error) {
 	msg := bson.M{"user":user}
-	result, err := findOneBy(TableUserRoles, msg)
+	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -82,25 +82,25 @@ func GetUserLink(user string) (*UserLink, error) {
 }
 
 func RemoveUser(uid, operator string) error {
-	_, err := removeOne(TableUserRoles, uid, operator)
+	_, err := removeOne(TableUsers, uid, operator)
 	return err
 }
 
 func RemoveUserPermissions(uid, operator string) error {
 	msg := bson.M{"roles": make([]string, 0, 1), "links": make([]string, 0, 1), "operator":operator,  "updatedAt": time.Now()}
-	_, err := updateOne(TableUserRoles, uid, msg)
+	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
 func UpdateUserRoles(uid, operator string, list []string) error {
 	msg := bson.M{"roles": list, "operator":operator,  "updatedAt": time.Now()}
-	_, err := updateOne(TableUserRoles, uid, msg)
+	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
 func UpdateUserLinks(uid, operator string, list []string) error {
 	msg := bson.M{"links": list, "operator":operator,  "updatedAt": time.Now()}
-	_, err := updateOne(TableUserRoles, uid, msg)
+	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
@@ -109,7 +109,7 @@ func AppendUserRole(uid string, role string) error {
 		return errors.New("the uid is empty")
 	}
 	msg := bson.M{"roles": role}
-	_, err := appendElement(TableUserRoles, uid, msg)
+	_, err := appendElement(TableUsers, uid, msg)
 	return err
 }
 
@@ -118,7 +118,7 @@ func SubtractUserRole(uid string, role string) error {
 		return errors.New("the uid is empty")
 	}
 	msg := bson.M{"roles": role}
-	_, err := removeElement(TableUserRoles, uid, msg)
+	_, err := removeElement(TableUsers, uid, msg)
 	return err
 }
 

@@ -10,7 +10,7 @@ import (
 type RoleInfo struct {
 	BaseInfo
 	Remark string
-	menus  []*MenuInfo
+	menus  []*CatalogInfo
 }
 
 func AllRoles() []*RoleInfo {
@@ -76,29 +76,40 @@ func (mine *RoleInfo)Create(menus []string) error {
 	return err
 }
 
-func (mine *RoleInfo)updateMenus(menus []string)  {
-	if menus == nil {
-		mine.menus = make([]*MenuInfo, 0, 1)
+func (mine *RoleInfo)updateMenus(list []string)  {
+	if list == nil {
+		mine.menus = make([]*CatalogInfo, 0, 1)
 		return
 	}
 	if len(mine.menus) > 0 {
 		mine.menus = mine.menus[:0]
 	}
-	for _, menu := range menus {
-		info := GetMenu(menu)
+	for _, menu := range list {
+		info := GetCatalog(menu)
 		if info != nil {
 			mine.menus = append(mine.menus, info)
 		}
 	}
 }
 
-func (mine *RoleInfo)Update(name, remark, operator string, menus []string) error {
+func (mine *RoleInfo)UpdateMenus(operator string, list []string) error {
+	if len(list) < 1 {
+		return nil
+	}
+	err := nosql.UpdateRoleMenus(mine.UID, operator, list)
+	if err == nil {
+		mine.updateMenus(list)
+	}
+	return err
+}
+
+func (mine *RoleInfo) UpdateBase(name, remark, operator string, menus []string) error {
 	err := nosql.UpdateRoleBase(mine.UID, name, remark, operator)
 	if err == nil {
 		mine.Name = name
 		mine.Remark = remark
 		mine.Operator = operator
-		mine.updateMenus(menus)
+		return mine.UpdateMenus(operator, menus)
 	}
 	return err
 }
@@ -116,16 +127,10 @@ func (mine *RoleInfo)Remove(operator string) error {
 	return err
 }
 
-func (mine *RoleInfo)hadMenu(path string, act string) bool {
+func (mine *RoleInfo)hadMenu(key string) bool {
 	for i := 0;i < len(mine.menus);i += 1{
-		if len(act) < 1 {
-			if mine.menus[i].Path == path {
-				return true
-			}
-		}else{
-			if mine.menus[i].Path == path && mine.menus[i].Method == act {
-				return true
-			}
+		if mine.menus[i].Key == key {
+			return true
 		}
 	}
 	return false
@@ -140,7 +145,7 @@ func (mine *RoleInfo)HadMenu(uid string) bool {
 	return false
 }
 
-func (mine *RoleInfo)AllMenus() []*MenuInfo {
+func (mine *RoleInfo)AllMenus() []*CatalogInfo {
 	return mine.menus
 }
 
@@ -152,7 +157,7 @@ func (mine *RoleInfo)Menus() []string {
 	return list
 }
 
-func (mine *RoleInfo)AppendMenu(menu *MenuInfo) error {
+func (mine *RoleInfo)AppendMenu(menu *CatalogInfo) error {
 	if menu == nil {
 		return errors.New("the menu is nil")
 	}

@@ -14,12 +14,12 @@ type Role struct {
 	CreatedTime time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedTime time.Time          `json:"updatedAt" bson:"updatedAt"`
 	DeleteTime  time.Time          `json:"deleteAt" bson:"deleteAt"`
-	Creator string `json:"creator" bson:"creator"`
-	Operator string `json:"operator" bson:"operator"`
+	Creator     string             `json:"creator" bson:"creator"`
+	Operator    string             `json:"operator" bson:"operator"`
 
-	Name   string                `json:"name" bson:"name"`
-	Remark  string                `json:"remark" bson:"remark"`
-	Menus  []string 		`json:"menus" bson:"menus"`
+	Name   string   `json:"name" bson:"name"`
+	Remark string   `json:"remark" bson:"remark"`
+	Menus  []string `json:"menus" bson:"menus"`
 }
 
 func CreateRole(info *Role) error {
@@ -67,7 +67,13 @@ func GetAllRoles() ([]*Role, error) {
 }
 
 func UpdateRoleBase(uid, name, remark, operator string) error {
-	msg := bson.M{"name": name, "remark": remark, "operator":operator, "updatedAt": time.Now()}
+	msg := bson.M{"name": name, "remark": remark, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableRole, uid, msg)
+	return err
+}
+
+func UpdateRoleMenus(uid, operator string, list []string) error {
+	msg := bson.M{"menus": list, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableRole, uid, msg)
 	return err
 }
@@ -94,4 +100,3 @@ func SubtractRoleMenu(uid string, menu string) error {
 	_, err := removeElement(TableRole, uid, msg)
 	return err
 }
-

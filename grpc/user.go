@@ -70,7 +70,8 @@ func (mine *UserService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 	}
 	info := cache.GetUser(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the user not found", pb.ResultCode_NotExisted)
+		//out.Status = outError(path,"the user not found", pb.ResultCode_NotExisted)
+		out.Status = outLog(path, out)
 		return nil
 	}
 	err := info.Remove(in.Operator)
@@ -109,7 +110,7 @@ func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermis
 		return nil
 	}
 	out.User = in.User
-	out.Permission = info.IsPermission(in.Path, in.Action)
+	out.Permission = info.IsPermission(in.Path)
 	out.Status = outLog(path, out)
 	return nil
 }

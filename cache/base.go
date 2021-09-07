@@ -20,7 +20,7 @@ type BaseInfo struct {
 type cacheContext struct {
 	users    []*UserInfo
 	roles    []*RoleInfo
-	menus    []*MenuInfo
+	apiMenus []*APIMenuInfo
 	catalogs []*CatalogInfo
 	enforcer *casbin.Enforcer
 }
@@ -31,7 +31,7 @@ func InitData() error {
 	cacheCtx = &cacheContext{}
 	cacheCtx.roles = make([]*RoleInfo, 0, 10)
 	cacheCtx.users = make([]*UserInfo, 0, 100)
-	cacheCtx.menus = make([]*MenuInfo, 0, 100)
+	cacheCtx.apiMenus = make([]*APIMenuInfo, 0, 100)
 	cacheCtx.catalogs = make([]*CatalogInfo, 0, 20)
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
 	if nil != err {
@@ -61,9 +61,9 @@ func InitData() error {
 	menus,err1 := nosql.GetAllMenus()
 	if err1 == nil {
 		for _, menu := range menus {
-			t := new(MenuInfo)
+			t := new(APIMenuInfo)
 			t.initInfo(menu)
-			cacheCtx.menus = append(cacheCtx.menus, t)
+			cacheCtx.apiMenus = append(cacheCtx.apiMenus, t)
 		}
 	}
 

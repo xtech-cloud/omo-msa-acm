@@ -8,43 +8,43 @@ import (
 
 type PermissionAction uint8
 
-type MenuInfo struct {
+type APIMenuInfo struct {
 	BaseInfo
 	Type string
 	Path string
 	Method string
 }
 
-func AllMenus() []*MenuInfo {
-	return cacheCtx.menus
+func AllMenus() []*APIMenuInfo {
+	return cacheCtx.apiMenus
 }
 
-func GetMenu(uid string) *MenuInfo {
-	for i := 0;i < len(cacheCtx.menus);i += 1 {
-		if cacheCtx.menus[i].UID == uid {
-			return cacheCtx.menus[i]
+func GetMenu(uid string) *APIMenuInfo {
+	for i := 0;i < len(cacheCtx.apiMenus);i += 1 {
+		if cacheCtx.apiMenus[i].UID == uid {
+			return cacheCtx.apiMenus[i]
 		}
 	}
 	db,err := nosql.GetMenu(uid)
 	if err == nil {
-		info := new(MenuInfo)
+		info := new(APIMenuInfo)
 		info.initInfo(db)
-		cacheCtx.menus = append(cacheCtx.menus, info)
+		cacheCtx.apiMenus = append(cacheCtx.apiMenus, info)
 		return info
 	}
 	return nil
 }
 
 func HadMenuByName(name string) bool {
-	for i := 0;i < len(cacheCtx.menus);i += 1{
-		if cacheCtx.menus[i].Name == name {
+	for i := 0;i < len(cacheCtx.apiMenus);i += 1{
+		if cacheCtx.apiMenus[i].Name == name {
 			return true
 		}
 	}
 	return false
 }
 
-func (mine *MenuInfo)initInfo(db *nosql.Menu)  {
+func (mine *APIMenuInfo)initInfo(db *nosql.Menu)  {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
 	mine.CreateTime = db.CreatedTime
@@ -57,7 +57,7 @@ func (mine *MenuInfo)initInfo(db *nosql.Menu)  {
 	mine.Method = db.Method
 }
 
-func (mine *MenuInfo)Create() error {
+func (mine *APIMenuInfo)Create() error {
 	db := new(nosql.Menu)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetMenuNextID()
@@ -71,12 +71,12 @@ func (mine *MenuInfo)Create() error {
 	err := nosql.CreateMenu(db)
 	if err == nil {
 		mine.initInfo(db)
-		cacheCtx.menus = append(cacheCtx.menus, mine)
+		cacheCtx.apiMenus = append(cacheCtx.apiMenus, mine)
 	}
 	return err
 }
 
-func (mine *MenuInfo)Update(name, kind, path, act, operator string) error {
+func (mine *APIMenuInfo)Update(name, kind, path, act, operator string) error {
 	err := nosql.UpdateMenuBase(mine.UID, name, kind, path, act, operator)
 	if err == nil {
 		mine.Name = name
@@ -88,12 +88,12 @@ func (mine *MenuInfo)Update(name, kind, path, act, operator string) error {
 	return err
 }
 
-func (mine *MenuInfo)Remove(operator string) error {
+func (mine *APIMenuInfo)Remove(operator string) error {
 	err := nosql.RemoveMenu(mine.UID, operator)
 	if err == nil {
-		for i := 0;i < len(cacheCtx.menus);i += 1 {
-			if cacheCtx.menus[i].UID == mine.UID {
-				cacheCtx.menus = append(cacheCtx.menus[:i], cacheCtx.menus[i+1:]...)
+		for i := 0;i < len(cacheCtx.apiMenus);i += 1 {
+			if cacheCtx.apiMenus[i].UID == mine.UID {
+				cacheCtx.apiMenus = append(cacheCtx.apiMenus[:i], cacheCtx.apiMenus[i+1:]...)
 				break
 			}
 		}

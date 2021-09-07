@@ -9,7 +9,7 @@ import (
 
 type MenuService struct {}
 
-func switchMenu(info *cache.MenuInfo) *pb.MenuInfo {
+func switchMenu(info *cache.APIMenuInfo) *pb.MenuInfo {
 	tmp := new(pb.MenuInfo)
 	tmp.Uid = info.UID
 	tmp.Id = info.ID
@@ -35,7 +35,7 @@ func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.R
 		out.Status = outError(path,"the menu name is existed", pb.ResultCode_Repeated)
 		return nil
 	}
-	info := new(cache.MenuInfo)
+	info := new(cache.APIMenuInfo)
 	info.Name = in.Name
 	info.Type = in.Type
 	info.Path = in.Path

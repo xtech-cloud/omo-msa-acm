@@ -8,8 +8,8 @@ const (
 	/**
 	数量自动增加
 	*/
-	TableSequence  = "sequences"
-	TableUserRoles = "acm_users"
-	TableMenu      = "acm_menus"
-	TableCatalog      = "acm_catalogs"
+	TableSequence = "sequences"
+	TableUsers    = "acm_users"
+	TableMenu     = "acm_menus"
+	TableCatalog  = "acm_catalogs"
 )

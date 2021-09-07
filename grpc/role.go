@@ -117,7 +117,7 @@ func (mine *RoleService)UpdateBase(ctx context.Context, in *pb.ReqRoleUpdate, ou
 		out.Status = outError(path,"the role not found", pb.ResultCode_NotExisted)
 		return nil
 	}
-	err := info.Update(in.Name, in.Remark, in.Operator, in.Menus)
+	err := info.UpdateBase(in.Name, in.Remark, in.Operator, in.Menus)
 	if err != nil {
 		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
 		return nil
@@ -141,7 +141,7 @@ func (mine *RoleService)AppendMenu(ctx context.Context, in *pb.ReqRoleMenus, out
 	}
 	var err error
 	for _, menu := range in.Menus {
-		err = info.AppendMenu(cache.GetMenu(menu))
+		err = info.AppendMenu(cache.GetCatalog(menu))
 		if err != nil {
 			break
 		}
