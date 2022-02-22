@@ -18,7 +18,9 @@ type UserLink struct {
 	Operator string `json:"operator" bson:"operator"`
 
 	Type uint8 						`json:"type" bson:"type"`
+	Status uint8 					`json:"status" bson:"status"`
 	User   string                	`json:"user" bson:"user"`
+	Owner string 					`json:"owner" bson:"owner"`
 	Roles  []string                `json:"roles" bson:"roles"`
 	Links  []string 				`json:"links" bson:"links"`
 }
@@ -81,8 +83,22 @@ func GetUserLink(user string) (*UserLink, error) {
 	return model, nil
 }
 
-func RemoveUser(uid, operator string) error {
-	_, err := removeOne(TableUsers, uid, operator)
+func GetUsersByOwner(owner string) (*UserLink, error) {
+	msg := bson.M{"owner":owner}
+	result, err := findOneBy(TableUsers, msg)
+	if err != nil {
+		return nil, err
+	}
+	model := new(UserLink)
+	err1 := result.Decode(model)
+	if err1 != nil {
+		return nil, err1
+	}
+	return model, nil
+}
+
+func RemoveUser(uid string) error {
+	_, err := deleteOne(TableUsers, uid)
 	return err
 }
 
@@ -100,6 +116,12 @@ func UpdateUserRoles(uid, operator string, list []string) error {
 
 func UpdateUserLinks(uid, operator string, list []string) error {
 	msg := bson.M{"links": list, "operator":operator,  "updatedAt": time.Now()}
+	_, err := updateOne(TableUsers, uid, msg)
+	return err
+}
+
+func UpdateUserStatus(uid, operator string, st uint8) error {
+	msg := bson.M{"status": st, "operator":operator,  "updatedAt": time.Now()}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }

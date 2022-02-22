@@ -18,6 +18,7 @@ type Role struct {
 	Operator    string             `json:"operator" bson:"operator"`
 
 	Name   string   `json:"name" bson:"name"`
+	Owner  string `json:"owner" bson:"owner"`
 	Remark string   `json:"remark" bson:"remark"`
 	Menus  []string `json:"menus" bson:"menus"`
 }

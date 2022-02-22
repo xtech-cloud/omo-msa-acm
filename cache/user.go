@@ -9,10 +9,17 @@ import (
 
 type UserType uint8
 
+const (
+	UserIdle = 0
+	UserForbidden = 1
+)
+
 type UserInfo struct {
+	Status uint8
 	BaseInfo
 	Type UserType
 	User  string
+	Owner string
 	Links []string
 	roles []*RoleInfo
 }
@@ -60,7 +67,9 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	mine.UpdateTime = db.UpdatedTime
 	mine.Operator = db.Operator
 	mine.Creator = db.Creator
+	mine.Owner = db.Owner
 	mine.User = db.User
+	mine.Status = db.Status
 	mine.Type = UserType(db.Type)
 	mine.roles = make([]*RoleInfo, 0, len(db.Roles))
 	for _, role := range db.Roles {
@@ -71,7 +80,7 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	}
 }
 
-func (mine *UserInfo)Create(tp UserType, roles, links []string) error {
+func (mine *UserInfo)Create(tp UserType, owner string, roles, links []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
@@ -79,7 +88,9 @@ func (mine *UserInfo)Create(tp UserType, roles, links []string) error {
 	db.UpdatedTime = time.Now()
 	db.User = mine.User
 	db.Operator = mine.Operator
+	db.Owner = owner
 	db.Roles = roles
+	db.Status = UserIdle
 	db.Links = links
 	if db.Links == nil {
 		db.Links = make([]string, 0, 1)
@@ -98,11 +109,15 @@ func (mine *UserInfo)Create(tp UserType, roles, links []string) error {
 }
 
 func (mine *UserInfo)Remove(operator string) error {
-	err := nosql.RemoveUserPermissions(mine.UID, operator)
+	err := nosql.RemoveUser(mine.UID)
 	if err == nil {
 		for i := 0;i < len(cacheCtx.users);i += 1 {
 			if cacheCtx.users[i].UID == mine.UID {
-				cacheCtx.users = append(cacheCtx.users[:i], cacheCtx.users[i+1:]...)
+				if i == len(cacheCtx.users) - 1 {
+					cacheCtx.users = append(cacheCtx.users[:i])
+				}else{
+					cacheCtx.users = append(cacheCtx.users[:i], cacheCtx.users[i+1:]...)
+				}
 				break
 			}
 		}
@@ -111,15 +126,15 @@ func (mine *UserInfo)Remove(operator string) error {
 }
 
 func (mine *UserInfo)IsPermission(path string) bool {
-	if mine.Type < 5 {
-		return true
+	if mine.Status == UserForbidden {
+		return false
 	}
-	for _, role := range mine.roles {
-		if role.hadMenu(path) {
-			return true
-		}
-	}
-	return false
+	//for _, role := range mine.roles {
+	//	if role.hadMenu(path) {
+	//		return true
+	//	}
+	//}
+	return true
 }
 
 func (mine *UserInfo)HadRole(uid string) bool {
@@ -150,6 +165,17 @@ func (mine *UserInfo)UpdateLinks(list []string, operator string) error {
 	err := nosql.UpdateUserLinks(mine.UID, operator, list)
 	if err == nil {
 		mine.Links = list
+	}
+	return err
+}
+
+func (mine *UserInfo)UpdateStatus(st uint8, operator string) error {
+	if st > UserForbidden || st < UserIdle {
+		return errors.New("the user status error")
+	}
+	err := nosql.UpdateUserStatus(mine.UID, operator, st)
+	if err == nil {
+		mine.Status = st
 	}
 	return err
 }

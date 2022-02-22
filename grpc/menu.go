@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/xtech-cloud/omo-msp-acm/proto/acm"
+	pbstatus "github.com/xtech-cloud/omo-msp-status/proto/status"
 	"omo.msa.acm/cache"
 )
 
@@ -28,11 +29,11 @@ func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.R
 	path := "menu.addOne"
 	inLog(path, in)
 	if len(in.Name) < 1 {
-		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		out.Status = outError(path,"the menu uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	if cache.HadMenuByName(in.Name) {
-		out.Status = outError(path,"the menu name is existed", pb.ResultCode_Repeated)
+		out.Status = outError(path,"the menu name is existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
 	info := new(cache.APIMenuInfo)
@@ -43,7 +44,7 @@ func (mine *MenuService)AddOne(ctx context.Context, in *pb.ReqMenuAdd, out *pb.R
 	info.Creator = in.Operator
 	err := info.Create()
 	if err != nil {
-		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Info = switchMenu(info)
@@ -55,12 +56,12 @@ func (mine *MenuService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.
 	path := "menu.getOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		out.Status = outError(path,"the menu uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		out.Status = outError(path,"the menu not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	out.Info = switchMenu(info)
@@ -72,21 +73,21 @@ func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 	path := "menu.removeOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		out.Status = outError(path,"the menu uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		out.Status = outError(path,"the menu not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	if info.Creator == "system" {
-		out.Status = outError(path,"the system menu not allow to delete", pb.ResultCode_DBException)
+		out.Status = outError(path,"the system menu not allow to delete", pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	err := info.Remove(in.Operator)
 	if err != nil {
-		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Uid = in.Uid
@@ -108,17 +109,17 @@ func (mine *MenuService)UpdateBase(ctx context.Context, in *pb.ReqMenuUpdate, ou
 	path := "menu.updateBase"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the menu uid is empty", pb.ResultCode_Empty)
+		out.Status = outError(path,"the menu uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetMenu(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the menu not found", pb.ResultCode_NotExisted)
+		out.Status = outError(path,"the menu not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	err := info.Update(in.Name, in.Type, in.Path, in.Method, in.Operator)
 	if err != nil {
-		out.Status = outError(path,err.Error(), pb.ResultCode_DBException)
+		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Info = switchMenu(info)

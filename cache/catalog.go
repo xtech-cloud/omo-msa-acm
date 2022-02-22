@@ -7,13 +7,20 @@ import (
 )
 
 type CatalogInfo struct {
+	Type uint8
 	BaseInfo
 	Remark string
 	Key string
 }
 
-func AllCatalogs() []*CatalogInfo {
-	return cacheCtx.catalogs
+func AllCatalogsByType(tp uint8) []*CatalogInfo {
+	list := make([]*CatalogInfo, 0, 10)
+	for _, catalog := range cacheCtx.catalogs {
+		if catalog.Type == tp {
+			list = append(list, catalog)
+		}
+	}
+	return list
 }
 
 func GetCatalog(uid string) *CatalogInfo {
@@ -51,6 +58,7 @@ func (mine *CatalogInfo)initInfo(db *nosql.Catalog)  {
 	mine.Name = db.Name
 	mine.Remark = db.Remark
 	mine.Key = db.Key
+	mine.Type = db.Type
 }
 
 func (mine *CatalogInfo)Create() error {
@@ -63,6 +71,7 @@ func (mine *CatalogInfo)Create() error {
 	db.Remark = mine.Remark
 	db.Creator = mine.Creator
 	db.Key = mine.Key
+	db.Type = mine.Type
 	err := nosql.CreateCatalog(db)
 	if err == nil {
 		mine.initInfo(db)

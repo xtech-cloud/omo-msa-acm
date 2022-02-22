@@ -10,11 +10,18 @@ import (
 type RoleInfo struct {
 	BaseInfo
 	Remark string
+	Owner string
 	menus  []*CatalogInfo
 }
 
-func AllRoles() []*RoleInfo {
-	return cacheCtx.roles
+func AllRoles(owner string) []*RoleInfo {
+	list := make([]*RoleInfo, 0, 10)
+	for _, info := range cacheCtx.roles {
+		if info.Owner == owner {
+			list = append(list, info)
+		}
+	}
+	return list
 }
 
 func GetRole(uid string) *RoleInfo {
@@ -49,12 +56,13 @@ func (mine *RoleInfo)initInfo(db *nosql.Role)  {
 	mine.UpdateTime = db.UpdatedTime
 	mine.Name = db.Name
 	mine.Remark = db.Remark
+	mine.Owner = db.Owner
 	mine.Operator = db.Operator
 	mine.Creator = db.Creator
 	mine.updateMenus(db.Menus)
 }
 
-func (mine *RoleInfo)Create(menus []string) error {
+func (mine *RoleInfo)Create(owner string, menus []string) error {
 	db := new(nosql.Role)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetRoleNextID()
@@ -63,6 +71,7 @@ func (mine *RoleInfo)Create(menus []string) error {
 	db.Name = mine.Name
 	db.Remark = mine.Remark
 	db.Menus = menus
+	db.Owner = owner
 	db.Creator = mine.Creator
 	if db.Menus == nil {
 		db.Menus = make([]string, 0, 1)

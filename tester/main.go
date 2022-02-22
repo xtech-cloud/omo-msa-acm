@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"omo.msa.acm/config"
