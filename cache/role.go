@@ -40,9 +40,9 @@ func GetRole(uid string) *RoleInfo {
 	return nil
 }
 
-func HadRoleByName(name string) bool {
+func HadRoleByName(owner, name string) bool {
 	for i := 0;i < len(cacheCtx.roles);i += 1{
-		if cacheCtx.roles[i].Name == name {
+		if cacheCtx.roles[i].Owner == owner && cacheCtx.roles[i].Name == name {
 			return true
 		}
 	}

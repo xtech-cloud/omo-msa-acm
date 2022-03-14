@@ -69,8 +69,8 @@ func GetAllUsers() ([]*UserLink, error) {
 	return items, nil
 }
 
-func GetUserLink(user string) (*UserLink, error) {
-	msg := bson.M{"user":user}
+func GetUserLink(owner, user string) (*UserLink, error) {
+	msg := bson.M{"owner":owner, "user":user}
 	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
@@ -122,6 +122,12 @@ func UpdateUserLinks(uid, operator string, list []string) error {
 
 func UpdateUserStatus(uid, operator string, st uint8) error {
 	msg := bson.M{"status": st, "operator":operator,  "updatedAt": time.Now()}
+	_, err := updateOne(TableUsers, uid, msg)
+	return err
+}
+
+func UpdateUserOwner(uid, owner string) error {
+	msg := bson.M{"owner": owner}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }

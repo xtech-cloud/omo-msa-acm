@@ -39,9 +39,9 @@ func GetCatalog(uid string) *CatalogInfo {
 	return nil
 }
 
-func HadCatalogByKey(key string) bool {
+func HadCatalogByKey(tp uint8, key string) bool {
 	for i := 0;i < len(cacheCtx.catalogs);i += 1{
-		if cacheCtx.catalogs[i].Key == key {
+		if cacheCtx.catalogs[i].Type == tp && cacheCtx.catalogs[i].Key == key {
 			return true
 		}
 	}

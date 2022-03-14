@@ -32,7 +32,7 @@ func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out
 		out.Status = outError(path,"the catalog name or key is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	if cache.HadCatalogByKey(in.Name) {
+	if cache.HadCatalogByKey(uint8(in.Type), in.Name) {
 		out.Status = outError(path,"the catalog name is existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
@@ -133,7 +133,7 @@ func (mine *CatalogService)UpdateBase(ctx context.Context, in *pb.ReqCatalogUpda
 		out.Status = outError(path,"the catalog not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
-	if info.Key != in.Key && cache.HadCatalogByKey(in.Key) {
+	if info.Key != in.Key && cache.HadCatalogByKey(info.Type, in.Key) {
 		out.Status = outError(path,"the catalog key had existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}

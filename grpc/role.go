@@ -34,7 +34,7 @@ func (mine *RoleService)AddOne(ctx context.Context, in *pb.ReqRoleAdd, out *pb.R
 		out.Status = outError(path,"the role name is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	if cache.HadRoleByName(in.Name) {
+	if cache.HadRoleByName(in.Owner, in.Name) {
 		out.Status = outError(path,"the role name is existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}

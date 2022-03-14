@@ -28,7 +28,7 @@ func AllUsers() []*UserInfo {
 	return cacheCtx.users
 }
 
-func getUser(uid string) *UserInfo {
+func GetUser(uid string) *UserInfo {
 	for i := 0;i < len(cacheCtx.users);i += 1 {
 		if cacheCtx.users[i].UID == uid {
 			return cacheCtx.users[i]
@@ -44,13 +44,13 @@ func getUser(uid string) *UserInfo {
 	return nil
 }
 
-func GetUser(user string) *UserInfo {
+func GetUserByOwner(owner, user string) *UserInfo {
 	for i := 0;i < len(cacheCtx.users);i += 1 {
-		if cacheCtx.users[i].User == user {
+		if cacheCtx.users[i].Owner == owner && cacheCtx.users[i].User == user {
 			return cacheCtx.users[i]
 		}
 	}
-	db,err := nosql.GetUserLink(user)
+	db,err := nosql.GetUserLink(owner, user)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
@@ -77,6 +77,10 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 		if info != nil {
 			mine.roles = append(mine.roles, info)
 		}
+	}
+	if mine.Owner == "" {
+		mine.Owner = "system"
+		_ = nosql.UpdateUserOwner(mine.UID, "system")
 	}
 }
 

@@ -28,7 +28,7 @@ func (mine *UserService)AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.R
 		out.Status = outError(path,"the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	tmp := cache.GetUser(in.User)
+	tmp := cache.GetUserByOwner(in.Owner, in.User)
 	if tmp != nil {
 		out.Info = switchUser(tmp)
 		out.Status = outLog(path, out)
@@ -55,7 +55,13 @@ func (mine *UserService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.
 		out.Status = outError(path,"the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	info := cache.GetUser(in.Uid)
+	var info *cache.UserInfo
+	if in.Owner != "" {
+		info = cache.GetUserByOwner(in.Owner, in.Uid)
+	}else{
+		info = cache.GetUser(in.Uid)
+	}
+
 	if info == nil {
 		out.Status = outError(path,"the user not found", pbstatus.ResultStatus_NotExisted)
 		return nil
@@ -72,7 +78,7 @@ func (mine *UserService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 		out.Status = outError(path,"the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	info := cache.GetUser(in.Uid)
+	info := cache.GetUserByOwner(in.Owner, in.Uid)
 	if info == nil {
 		//out.Status = outError(path,"the user not found", pbstatus.ResultStatus_NotExisted)
 		out.Status = outLog(path, out)
@@ -115,7 +121,7 @@ func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermis
 		out.Status = outError(path,"the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	info := cache.GetUser(in.User)
+	info := cache.GetUserByOwner(in.Owner, in.User)
 	if info == nil {
 		out.Status = outError(path,"the user not found", pbstatus.ResultStatus_NotExisted)
 		return nil
@@ -129,12 +135,13 @@ func (mine *UserService) IsPermission (ctx context.Context, in *pb.ReqUserPermis
 func (mine *UserService) UpdateRoles (ctx context.Context, in *pb.ReqUserLinks, out *pb.ReplyUserLinks) error {
 	path := "user.updateRoles"
 	inLog(path, in)
-	if len(in.User) < 1 {
-		out.Status = outError(path,"the user or uid is empty", pbstatus.ResultStatus_Empty)
-		return nil
-	}
 	var user *cache.UserInfo
-	user = cache.GetUser(in.User)
+	if len(in.Uid) > 1 {
+		user = cache.GetUser(in.Uid)
+	}else{
+		user = cache.GetUserByOwner(in.Owner, in.User)
+	}
+
 	if user == nil {
 		out.Status = outError(path,"not found the user", pbstatus.ResultStatus_NotExisted)
 		return nil
@@ -159,7 +166,7 @@ func (mine *UserService) UpdateStatus (ctx context.Context, in *pb.ReqUserStatus
 		return nil
 	}
 	var user *cache.UserInfo
-	user = cache.GetUser(in.Uid)
+	user = cache.GetUserByOwner(in.Owner, in.Uid)
 	if user == nil {
 		out.Status = outError(path,"not found the user", pbstatus.ResultStatus_NotExisted)
 		return nil
@@ -177,12 +184,12 @@ func (mine *UserService) UpdateStatus (ctx context.Context, in *pb.ReqUserStatus
 func (mine *UserService) UpdateLinks (ctx context.Context, in *pb.ReqUserLinks, out *pb.ReplyUserLinks) error {
 	path := "user.updateLinks"
 	inLog(path, in)
-	if len(in.User) < 1 {
+	if len(in.Uid) < 1 {
 		out.Status = outError(path,"the user or uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	var user *cache.UserInfo
-	user = cache.GetUser(in.User)
+	user = cache.GetUserByOwner(in.Owner, in.Uid)
 	if user == nil {
 		out.Status = outError(path,"the user not found", pbstatus.ResultStatus_NotExisted)
 		return nil
