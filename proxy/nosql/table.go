@@ -12,4 +12,6 @@ const (
 	TableUsers    = "acm_users"
 	TableMenu     = "acm_menus"
 	TableCatalog  = "acm_catalogs"
+	TableScenes  = "acm_scenes"
+	TableModules  = "acm_modules"
 )

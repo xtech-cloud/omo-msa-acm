@@ -6,7 +6,6 @@ import (
 	pb "github.com/xtech-cloud/omo-msp-acm/proto/acm"
 	pbstatus "github.com/xtech-cloud/omo-msp-status/proto/status"
 	"omo.msa.acm/cache"
-	"strconv"
 )
 
 type CatalogService struct {}
@@ -21,6 +20,7 @@ func switchCatalog(info *cache.CatalogInfo) *pb.CatalogInfo {
 	tmp.Creator = info.Creator
 	tmp.Name = info.Name
 	tmp.Key = info.Key
+	tmp.Type = uint32(info.Type)
 	tmp.Remark = info.Remark
 	return tmp
 }
@@ -32,7 +32,7 @@ func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out
 		out.Status = outError(path,"the catalog name or key is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	if cache.HadCatalogByKey(uint8(in.Type), in.Name) {
+	if cache.HadCatalogByKey(cache.CatalogType(in.Type), in.Name) {
 		out.Status = outError(path,"the catalog name is existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
@@ -40,7 +40,7 @@ func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out
 	info.Name = in.Name
 	info.Remark = in.Remark
 	info.Key = in.Key
-	info.Type = uint8(in.Type)
+	info.Type = cache.CatalogType(in.Type)
 	info.Creator = in.Operator
 	err := info.Create()
 	if err != nil {
@@ -95,26 +95,13 @@ func (mine *CatalogService)RemoveOne(ctx context.Context, in *pb.RequestInfo, ou
 	return err
 }
 
-func (mine *CatalogService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyCatalogList) error {
+func (mine *CatalogService)GetAll(ctx context.Context, in *pb.RequestPage, out *pb.ReplyCatalogList) error {
 	path := "catalog.getAll"
 	inLog(path, in)
-	if in.Uid == "" {
-		out.List = make([]*pb.CatalogInfo, 0, 10)
-		list := cache.AllCatalogsByType(0)
-		for _, value := range list {
-			out.List = append(out.List, switchCatalog(value))
-		}
-	}else{
-		tp, err := strconv.ParseUint(in.Uid, 10, 32)
-		if err != nil {
-			out.Status = outError(path, err.Error(), pbstatus.ResultStatus_FormatError)
-			return nil
-		}
-		out.List = make([]*pb.CatalogInfo, 0, 10)
-		list := cache.AllCatalogsByType(uint8(tp))
-		for _, value := range list {
-			out.List = append(out.List, switchCatalog(value))
-		}
+	out.List = make([]*pb.CatalogInfo, 0, 10)
+	list := cache.AllCatalogsByType(cache.CatalogType(in.Type))
+	for _, value := range list {
+		out.List = append(out.List, switchCatalog(value))
 	}
 
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))

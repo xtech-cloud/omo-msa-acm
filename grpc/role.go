@@ -96,13 +96,13 @@ func (mine *RoleService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 	return nil
 }
 
-func (mine *RoleService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyRoleList) error {
+func (mine *RoleService)GetAll(ctx context.Context, in *pb.RequestPage, out *pb.ReplyRoleList) error {
 	path := "role.getAll"
 	inLog(path, in)
 	out.List = make([]*pb.RoleInfo, 0, 5)
-	roles := cache.AllRoles(in.Owner)
+	roles := cache.AllRoles(in.Parent)
 	for _, value := range roles {
-		if value.Owner == in.Owner {
+		if value.Owner == in.Parent {
 			out.List = append(out.List, switchRole(value))
 		}
 	}

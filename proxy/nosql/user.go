@@ -69,6 +69,20 @@ func GetAllUsers() ([]*UserLink, error) {
 	return items, nil
 }
 
+func GetUserByLink(user string) (*UserLink, error) {
+	msg := bson.M{"user":user}
+	result, err := findOneBy(TableUsers, msg)
+	if err != nil {
+		return nil, err
+	}
+	model := new(UserLink)
+	err1 := result.Decode(model)
+	if err1 != nil {
+		return nil, err1
+	}
+	return model, nil
+}
+
 func GetUserLink(owner, user string) (*UserLink, error) {
 	msg := bson.M{"owner":owner, "user":user}
 	result, err := findOneBy(TableUsers, msg)

@@ -1,6 +1,6 @@
 export GO111MODULE=on
 export GOSUMDB=off
-export GOPROXY=https://mirrors.aliyun.com/goproxy/
+export GOPROXY=https://goproxy.cn
 go install omo.msa.acm
 mkdir _build
 mkdir _build/bin

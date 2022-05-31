@@ -6,14 +6,21 @@ import (
 	"time"
 )
 
+const (
+	CatalogTypeUser CatalogType = 0
+	CatalogTypeScene CatalogType = 1
+)
+
+type CatalogType uint8
+
 type CatalogInfo struct {
-	Type uint8
+	Type CatalogType
 	BaseInfo
 	Remark string
 	Key string
 }
 
-func AllCatalogsByType(tp uint8) []*CatalogInfo {
+func AllCatalogsByType(tp CatalogType) []*CatalogInfo {
 	list := make([]*CatalogInfo, 0, 10)
 	for _, catalog := range cacheCtx.catalogs {
 		if catalog.Type == tp {
@@ -39,7 +46,7 @@ func GetCatalog(uid string) *CatalogInfo {
 	return nil
 }
 
-func HadCatalogByKey(tp uint8, key string) bool {
+func HadCatalogByKey(tp CatalogType, key string) bool {
 	for i := 0;i < len(cacheCtx.catalogs);i += 1{
 		if cacheCtx.catalogs[i].Type == tp && cacheCtx.catalogs[i].Key == key {
 			return true
@@ -58,7 +65,7 @@ func (mine *CatalogInfo)initInfo(db *nosql.Catalog)  {
 	mine.Name = db.Name
 	mine.Remark = db.Remark
 	mine.Key = db.Key
-	mine.Type = db.Type
+	mine.Type = CatalogType(db.Type)
 }
 
 func (mine *CatalogInfo)Create() error {
@@ -71,7 +78,7 @@ func (mine *CatalogInfo)Create() error {
 	db.Remark = mine.Remark
 	db.Creator = mine.Creator
 	db.Key = mine.Key
-	db.Type = mine.Type
+	db.Type = uint8(mine.Type)
 	err := nosql.CreateCatalog(db)
 	if err == nil {
 		mine.initInfo(db)

@@ -22,6 +22,8 @@ type cacheContext struct {
 	roles    []*RoleInfo
 	apiMenus []*APIMenuInfo
 	catalogs []*CatalogInfo
+	modules  []*ModuleInfo
+	scenes   []*SceneInfo
 	enforcer *casbin.Enforcer
 }
 
@@ -32,7 +34,9 @@ func InitData() error {
 	cacheCtx.roles = make([]*RoleInfo, 0, 10)
 	cacheCtx.users = make([]*UserInfo, 0, 100)
 	cacheCtx.apiMenus = make([]*APIMenuInfo, 0, 100)
-	cacheCtx.catalogs = make([]*CatalogInfo, 0, 20)
+	cacheCtx.catalogs = make([]*CatalogInfo, 0, 100)
+	cacheCtx.modules = make([]*ModuleInfo, 0, 100)
+	cacheCtx.scenes = make([]*SceneInfo, 0, 50)
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
 	if nil != err {
 		return err
@@ -58,12 +62,12 @@ func InitData() error {
 		}
 	}
 
-	menus,err1 := nosql.GetAllMenus()
+	modules,err1 := nosql.GetAllModules()
 	if err1 == nil {
-		for _, menu := range menus {
-			t := new(APIMenuInfo)
+		for _, menu := range modules {
+			t := new(ModuleInfo)
 			t.initInfo(menu)
-			cacheCtx.apiMenus = append(cacheCtx.apiMenus, t)
+			cacheCtx.modules = append(cacheCtx.modules, t)
 		}
 	}
 
@@ -78,10 +82,18 @@ func InitData() error {
 
 	users,err2 := nosql.GetAllUsers()
 	if err2 == nil {
-		for _, user := range users {
+		for _, temp := range users {
 			t := new(UserInfo)
-			t.initInfo(user)
+			t.initInfo(temp)
 			cacheCtx.users = append(cacheCtx.users, t)
+		}
+	}
+	scenes,err4 := nosql.GetAllScenes()
+	if err4 == nil {
+		for _, temp := range scenes {
+			t := new(SceneInfo)
+			t.initInfo(temp)
+			cacheCtx.scenes = append(cacheCtx.scenes, t)
 		}
 	}
 	//return cacheCtx.enforcer.LoadPolicy()

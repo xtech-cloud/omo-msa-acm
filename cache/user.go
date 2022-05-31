@@ -30,11 +30,22 @@ func AllUsers() []*UserInfo {
 
 func GetUser(uid string) *UserInfo {
 	for i := 0;i < len(cacheCtx.users);i += 1 {
-		if cacheCtx.users[i].UID == uid {
+		if cacheCtx.users[i].User == uid || cacheCtx.users[i].UID == uid {
 			return cacheCtx.users[i]
 		}
 	}
 	db,err := nosql.GetUser(uid)
+	if err == nil {
+		info := new(UserInfo)
+		info.initInfo(db)
+		cacheCtx.users = append(cacheCtx.users, info)
+		return info
+	}
+	return getUserByLink(uid)
+}
+
+func getUserByLink(uid string) *UserInfo {
+	db,err := nosql.GetUserByLink(uid)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)

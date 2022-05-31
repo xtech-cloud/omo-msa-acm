@@ -13,6 +13,11 @@ type UserService struct {}
 func switchUser(info *cache.UserInfo) *pb.UserLink {
 	tmp := new(pb.UserLink)
 	tmp.Uid = info.UID
+	tmp.Id = info.ID
+	tmp.Created = info.CreateTime.Unix()
+	tmp.Updated = info.UpdateTime.Unix()
+	tmp.Operator = info.Operator
+	tmp.Creator = info.Creator
 	tmp.User = info.User
 	tmp.Owner = info.Owner
 	tmp.Status = uint32(info.Status)
@@ -28,12 +33,17 @@ func (mine *UserService)AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.R
 		out.Status = outError(path,"the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	tmp := cache.GetUserByOwner(in.Owner, in.User)
-	if tmp != nil {
-		out.Info = switchUser(tmp)
-		out.Status = outLog(path, out)
+	t := cache.GetUser(in.User)
+	if t != nil {
+		out.Status = outError(path,"the user had repeated", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
+	//tmp := cache.GetUserByOwner(in.Owner, in.User)
+	//if tmp != nil {
+	//	out.Info = switchUser(tmp)
+	//	out.Status = outLog(path, out)
+	//	return nil
+	//}
 	info := new(cache.UserInfo)
 	info.User = in.User
 	info.Owner = in.Owner
@@ -93,18 +103,18 @@ func (mine *UserService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 	return nil
 }
 
-func (mine *UserService)GetList(ctx context.Context, in *pb.ReqUserList, out *pb.ReplyUserList) error {
+func (mine *UserService)GetList(ctx context.Context, in *pb.RequestPage, out *pb.ReplyUserList) error {
 	path := "user.getList"
 	inLog(path, in)
 	out.Users = make([]*pb.UserLink, 0, in.Number)
 	all := cache.AllUsers()
-	if in.Owner == "" {
+	if in.Parent == "" {
 		for _, value := range all {
 			out.Users = append(out.Users, switchUser(value))
 		}
 	}else{
 		for _, value := range all {
-			if value.Owner == in.Owner {
+			if value.Owner == in.Parent {
 				out.Users = append(out.Users, switchUser(value))
 			}
 		}

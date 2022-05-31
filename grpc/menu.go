@@ -95,7 +95,7 @@ func (mine *MenuService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *
 	return err
 }
 
-func (mine *MenuService)GetAll(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyMenuList) error {
+func (mine *MenuService)GetAll(ctx context.Context, in *pb.RequestPage, out *pb.ReplyMenuList) error {
 	inLog("menu.getAll", in)
 	out.List = make([]*pb.MenuInfo, 0, 10)
 	for _, value := range cache.AllMenus() {
