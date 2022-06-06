@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"omo.msa.acm/proxy/nosql"
 	"time"
@@ -97,7 +96,7 @@ func (mine *SceneInfo)Remove(operator string) error {
 
 func (mine *SceneInfo)UpdateModules(list []string, operator string) error {
 	if list == nil {
-		return errors.New("the links is nil")
+		list = make([]string, 0, 1)
 	}
 	err := nosql.UpdateSceneModules(mine.UID, operator, list)
 	if err == nil {
