@@ -8,7 +8,7 @@ import (
 	"omo.msa.acm/cache"
 )
 
-type CatalogService struct {}
+type CatalogService struct{}
 
 func switchCatalog(info *cache.CatalogInfo) *pb.CatalogInfo {
 	tmp := new(pb.CatalogInfo)
@@ -22,18 +22,19 @@ func switchCatalog(info *cache.CatalogInfo) *pb.CatalogInfo {
 	tmp.Key = info.Key
 	tmp.Type = uint32(info.Type)
 	tmp.Remark = info.Remark
+	tmp.Concepts = info.Concepts
 	return tmp
 }
 
-func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out *pb.ReplyCatalogInfo) error {
+func (mine *CatalogService) AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out *pb.ReplyCatalogInfo) error {
 	path := "catalog.addOne"
 	inLog(path, in)
 	if len(in.Name) < 1 || len(in.Key) < 1 {
-		out.Status = outError(path,"the catalog name or key is empty", pbstatus.ResultStatus_Empty)
+		out.Status = outError(path, "the catalog name or key is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	if cache.HadCatalogByKey(cache.CatalogType(in.Type), in.Name) {
-		out.Status = outError(path,"the catalog name is existed", pbstatus.ResultStatus_Repeated)
+		out.Status = outError(path, "the catalog name is existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
 	info := new(cache.CatalogInfo)
@@ -44,7 +45,7 @@ func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out
 	info.Creator = in.Operator
 	err := info.Create()
 	if err != nil {
-		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
+		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Info = switchCatalog(info)
@@ -52,16 +53,16 @@ func (mine *CatalogService)AddOne(ctx context.Context, in *pb.ReqCatalogAdd, out
 	return nil
 }
 
-func (mine *CatalogService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyCatalogInfo) error {
+func (mine *CatalogService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyCatalogInfo) error {
 	path := "catalog.getOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the catalog uid is empty", pbstatus.ResultStatus_Empty)
+		out.Status = outError(path, "the catalog uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetCatalog(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the catalog not found", pbstatus.ResultStatus_NotExisted)
+		out.Status = outError(path, "the catalog not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	out.Info = switchCatalog(info)
@@ -69,25 +70,25 @@ func (mine *CatalogService)GetOne(ctx context.Context, in *pb.RequestInfo, out *
 	return nil
 }
 
-func (mine *CatalogService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+func (mine *CatalogService) RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
 	path := "catalog.removeOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the catalog uid is empty", pbstatus.ResultStatus_Empty)
+		out.Status = outError(path, "the catalog uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetCatalog(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the catalog not found", pbstatus.ResultStatus_NotExisted)
+		out.Status = outError(path, "the catalog not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	if info.Creator == "system" {
-		out.Status = outError(path,"the system catalog not allow to delete", pbstatus.ResultStatus_DBException)
+		out.Status = outError(path, "the system catalog not allow to delete", pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	err := info.Remove(in.Operator)
 	if err != nil {
-		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
+		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Uid = in.Uid
@@ -95,7 +96,7 @@ func (mine *CatalogService)RemoveOne(ctx context.Context, in *pb.RequestInfo, ou
 	return err
 }
 
-func (mine *CatalogService)GetAll(ctx context.Context, in *pb.RequestPage, out *pb.ReplyCatalogList) error {
+func (mine *CatalogService) GetAll(ctx context.Context, in *pb.RequestPage, out *pb.ReplyCatalogList) error {
 	path := "catalog.getAll"
 	inLog(path, in)
 	out.List = make([]*pb.CatalogInfo, 0, 10)
@@ -108,25 +109,25 @@ func (mine *CatalogService)GetAll(ctx context.Context, in *pb.RequestPage, out *
 	return nil
 }
 
-func (mine *CatalogService)UpdateBase(ctx context.Context, in *pb.ReqCatalogUpdate, out *pb.ReplyCatalogInfo) error {
+func (mine *CatalogService) UpdateBase(ctx context.Context, in *pb.ReqCatalogUpdate, out *pb.ReplyCatalogInfo) error {
 	path := "catalog.updateBase"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
-		out.Status = outError(path,"the catalog uid is empty", pbstatus.ResultStatus_Empty)
+		out.Status = outError(path, "the catalog uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
 	info := cache.GetCatalog(in.Uid)
 	if info == nil {
-		out.Status = outError(path,"the catalog not found", pbstatus.ResultStatus_NotExisted)
+		out.Status = outError(path, "the catalog not found", pbstatus.ResultStatus_NotExisted)
 		return nil
 	}
 	if info.Key != in.Key && cache.HadCatalogByKey(info.Type, in.Key) {
-		out.Status = outError(path,"the catalog key had existed", pbstatus.ResultStatus_Repeated)
+		out.Status = outError(path, "the catalog key had existed", pbstatus.ResultStatus_Repeated)
 		return nil
 	}
-	err := info.Update(in.Name, in.Key, in.Remark, in.Operator)
+	err := info.Update(in.Name, in.Key, in.Remark, in.Operator, in.Concepts)
 	if err != nil {
-		out.Status = outError(path,err.Error(), pbstatus.ResultStatus_DBException)
+		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
 	}
 	out.Info = switchCatalog(info)

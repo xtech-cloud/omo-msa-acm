@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CatalogTypeUser CatalogType = 0
+	CatalogTypeUser  CatalogType = 0
 	CatalogTypeScene CatalogType = 1
 )
 
@@ -16,8 +16,9 @@ type CatalogType uint8
 type CatalogInfo struct {
 	Type CatalogType
 	BaseInfo
-	Remark string
-	Key string
+	Remark   string
+	Key      string
+	Concepts []string
 }
 
 func AllCatalogsByType(tp CatalogType) []*CatalogInfo {
@@ -31,12 +32,12 @@ func AllCatalogsByType(tp CatalogType) []*CatalogInfo {
 }
 
 func GetCatalog(uid string) *CatalogInfo {
-	for i := 0;i < len(cacheCtx.catalogs);i += 1 {
+	for i := 0; i < len(cacheCtx.catalogs); i += 1 {
 		if cacheCtx.catalogs[i].UID == uid {
 			return cacheCtx.catalogs[i]
 		}
 	}
-	db,err := nosql.GetCatalog(uid)
+	db, err := nosql.GetCatalog(uid)
 	if err == nil {
 		info := new(CatalogInfo)
 		info.initInfo(db)
@@ -47,7 +48,7 @@ func GetCatalog(uid string) *CatalogInfo {
 }
 
 func HadCatalogByKey(tp CatalogType, key string) bool {
-	for i := 0;i < len(cacheCtx.catalogs);i += 1{
+	for i := 0; i < len(cacheCtx.catalogs); i += 1 {
 		if cacheCtx.catalogs[i].Type == tp && cacheCtx.catalogs[i].Key == key {
 			return true
 		}
@@ -55,7 +56,7 @@ func HadCatalogByKey(tp CatalogType, key string) bool {
 	return false
 }
 
-func (mine *CatalogInfo)initInfo(db *nosql.Catalog)  {
+func (mine *CatalogInfo) initInfo(db *nosql.Catalog) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
 	mine.CreateTime = db.CreatedTime
@@ -66,9 +67,10 @@ func (mine *CatalogInfo)initInfo(db *nosql.Catalog)  {
 	mine.Remark = db.Remark
 	mine.Key = db.Key
 	mine.Type = CatalogType(db.Type)
+	mine.Concepts = db.Concepts
 }
 
-func (mine *CatalogInfo)Create() error {
+func (mine *CatalogInfo) Create() error {
 	db := new(nosql.Catalog)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetCatalogNextID()
@@ -79,6 +81,7 @@ func (mine *CatalogInfo)Create() error {
 	db.Creator = mine.Creator
 	db.Key = mine.Key
 	db.Type = uint8(mine.Type)
+	db.Concepts = make([]string, 0, 1)
 	err := nosql.CreateCatalog(db)
 	if err == nil {
 		mine.initInfo(db)
@@ -87,21 +90,22 @@ func (mine *CatalogInfo)Create() error {
 	return err
 }
 
-func (mine *CatalogInfo)Update(name, key, remark, operator string) error {
+func (mine *CatalogInfo) Update(name, key, remark, operator string, concepts []string) error {
 	err := nosql.UpdateCatalogBase(mine.UID, name, key, remark, operator)
 	if err == nil {
 		mine.Name = name
 		mine.Remark = remark
 		mine.Key = key
+		mine.Concepts = concepts
 		mine.Operator = operator
 	}
 	return err
 }
 
-func (mine *CatalogInfo)Remove(operator string) error {
+func (mine *CatalogInfo) Remove(operator string) error {
 	err := nosql.RemoveCatalog(mine.UID, operator)
 	if err == nil {
-		for i := 0;i < len(cacheCtx.catalogs);i += 1 {
+		for i := 0; i < len(cacheCtx.catalogs); i += 1 {
 			if cacheCtx.catalogs[i].UID == mine.UID {
 				cacheCtx.catalogs = append(cacheCtx.catalogs[:i], cacheCtx.catalogs[i+1:]...)
 				break

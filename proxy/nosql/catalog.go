@@ -16,10 +16,11 @@ type Catalog struct {
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 
-	Name   string `json:"name" bson:"name"`
-	Remark string `json:"remark" bson:"remark"`
-	Key    string `json:"key" bson:"key"`
-	Type   uint8  `json:"type" bson:"type"`
+	Name     string   `json:"name" bson:"name"`
+	Remark   string   `json:"remark" bson:"remark"`
+	Key      string   `json:"key" bson:"key"`
+	Type     uint8    `json:"type" bson:"type"`
+	Concepts []string `json:"concepts" bson:"concepts"`
 }
 
 func CreateCatalog(info *Catalog) error {
