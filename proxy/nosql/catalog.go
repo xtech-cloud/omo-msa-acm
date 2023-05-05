@@ -67,8 +67,8 @@ func GetAllCatalogs() ([]*Catalog, error) {
 	return items, nil
 }
 
-func UpdateCatalogBase(uid, name, key, remark, operator string) error {
-	msg := bson.M{"name": name, "key": key, "remark": remark, "operator": operator, "updatedAt": time.Now()}
+func UpdateCatalogBase(uid, name, key, remark, operator string, concepts []string) error {
+	msg := bson.M{"name": name, "key": key, "remark": remark, "operator": operator, "concepts": concepts, "updatedAt": time.Now()}
 	_, err := updateOne(TableCatalog, uid, msg)
 	return err
 }

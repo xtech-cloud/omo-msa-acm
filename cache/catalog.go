@@ -91,7 +91,7 @@ func (mine *CatalogInfo) Create() error {
 }
 
 func (mine *CatalogInfo) Update(name, key, remark, operator string, concepts []string) error {
-	err := nosql.UpdateCatalogBase(mine.UID, name, key, remark, operator)
+	err := nosql.UpdateCatalogBase(mine.UID, name, key, remark, operator, concepts)
 	if err == nil {
 		mine.Name = name
 		mine.Remark = remark
