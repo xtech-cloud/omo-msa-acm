@@ -9,19 +9,27 @@ import (
 
 type UserType uint8
 
+const DefaultOwner = "system"
+
 const (
-	UserIdle = 0
+	UserIdle      = 0
 	UserForbidden = 1
+)
+
+const (
+	UserTypeAdmin  UserType = 1
+	UserTypeCommon UserType = 2
 )
 
 type UserInfo struct {
 	Status uint8
 	BaseInfo
-	Type UserType
-	User  string
-	Owner string
-	Links []string
-	roles []*RoleInfo
+	Type   UserType
+	User   string
+	Owner  string
+	Remark string
+	Links  []string
+	roles  []*RoleInfo
 }
 
 func AllUsers() []*UserInfo {
@@ -29,12 +37,12 @@ func AllUsers() []*UserInfo {
 }
 
 func GetUser(uid string) *UserInfo {
-	for i := 0;i < len(cacheCtx.users);i += 1 {
+	for i := 0; i < len(cacheCtx.users); i += 1 {
 		if cacheCtx.users[i].User == uid || cacheCtx.users[i].UID == uid {
 			return cacheCtx.users[i]
 		}
 	}
-	db,err := nosql.GetUser(uid)
+	db, err := nosql.GetUser(uid)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
@@ -45,7 +53,7 @@ func GetUser(uid string) *UserInfo {
 }
 
 func getUserByLink(uid string) *UserInfo {
-	db,err := nosql.GetUserByLink(uid)
+	db, err := nosql.GetUserByLink(uid)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
@@ -56,12 +64,12 @@ func getUserByLink(uid string) *UserInfo {
 }
 
 func GetUserByOwner(owner, user string) *UserInfo {
-	for i := 0;i < len(cacheCtx.users);i += 1 {
+	for i := 0; i < len(cacheCtx.users); i += 1 {
 		if cacheCtx.users[i].Owner == owner && cacheCtx.users[i].User == user {
 			return cacheCtx.users[i]
 		}
 	}
-	db,err := nosql.GetUserLink(owner, user)
+	db, err := nosql.GetUserLink(owner, user)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
@@ -71,7 +79,7 @@ func GetUserByOwner(owner, user string) *UserInfo {
 	return nil
 }
 
-func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
+func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
 	mine.CreateTime = db.CreatedTime
@@ -81,6 +89,7 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 	mine.Owner = db.Owner
 	mine.User = db.User
 	mine.Status = db.Status
+	mine.Remark = db.Remark
 	mine.Type = UserType(db.Type)
 	mine.roles = make([]*RoleInfo, 0, len(db.Roles))
 	for _, role := range db.Roles {
@@ -90,12 +99,12 @@ func (mine *UserInfo)initInfo(db *nosql.UserLink)  {
 		}
 	}
 	if mine.Owner == "" {
-		mine.Owner = "system"
-		_ = nosql.UpdateUserOwner(mine.UID, "system")
+		mine.Owner = DefaultOwner
+		_ = nosql.UpdateUserOwner(mine.UID, DefaultOwner)
 	}
 }
 
-func (mine *UserInfo)Create(tp UserType, owner string, roles, links []string) error {
+func (mine *UserInfo) Create(tp UserType, name, owner, remark string, roles, links []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
@@ -104,9 +113,14 @@ func (mine *UserInfo)Create(tp UserType, owner string, roles, links []string) er
 	db.User = mine.User
 	db.Operator = mine.Operator
 	db.Owner = owner
+	if db.Owner == "" {
+		db.Owner = DefaultOwner
+	}
 	db.Roles = roles
 	db.Status = UserIdle
 	db.Links = links
+	db.Name = name
+	db.Remark = remark
 	if db.Links == nil {
 		db.Links = make([]string, 0, 1)
 	}
@@ -123,14 +137,14 @@ func (mine *UserInfo)Create(tp UserType, owner string, roles, links []string) er
 	return err
 }
 
-func (mine *UserInfo)Remove(operator string) error {
+func (mine *UserInfo) Remove(operator string) error {
 	err := nosql.RemoveUser(mine.UID)
 	if err == nil {
-		for i := 0;i < len(cacheCtx.users);i += 1 {
+		for i := 0; i < len(cacheCtx.users); i += 1 {
 			if cacheCtx.users[i].UID == mine.UID {
-				if i == len(cacheCtx.users) - 1 {
+				if i == len(cacheCtx.users)-1 {
 					cacheCtx.users = append(cacheCtx.users[:i])
-				}else{
+				} else {
 					cacheCtx.users = append(cacheCtx.users[:i], cacheCtx.users[i+1:]...)
 				}
 				break
@@ -140,7 +154,7 @@ func (mine *UserInfo)Remove(operator string) error {
 	return err
 }
 
-func (mine *UserInfo)IsPermission(path string) bool {
+func (mine *UserInfo) IsPermission(path string) bool {
 	if mine.Status == UserForbidden {
 		return false
 	}
@@ -152,8 +166,8 @@ func (mine *UserInfo)IsPermission(path string) bool {
 	return true
 }
 
-func (mine *UserInfo)HadRole(uid string) bool {
-	for i := 0;i < len(mine.roles);i += 1{
+func (mine *UserInfo) HadRole(uid string) bool {
+	for i := 0; i < len(mine.roles); i += 1 {
 		if mine.roles[i].UID == uid {
 			return true
 		}
@@ -161,11 +175,11 @@ func (mine *UserInfo)HadRole(uid string) bool {
 	return false
 }
 
-func (mine *UserInfo)AllRoles() []*RoleInfo {
+func (mine *UserInfo) AllRoles() []*RoleInfo {
 	return mine.roles
 }
 
-func (mine *UserInfo)Roles() []string {
+func (mine *UserInfo) Roles() []string {
 	list := make([]string, 0, len(mine.roles))
 	for _, role := range mine.roles {
 		list = append(list, role.UID)
@@ -173,7 +187,7 @@ func (mine *UserInfo)Roles() []string {
 	return list
 }
 
-func (mine *UserInfo)UpdateLinks(list []string, operator string) error {
+func (mine *UserInfo) UpdateLinks(list []string, operator string) error {
 	if list == nil {
 		return errors.New("the links is nil")
 	}
@@ -184,7 +198,7 @@ func (mine *UserInfo)UpdateLinks(list []string, operator string) error {
 	return err
 }
 
-func (mine *UserInfo)UpdateStatus(st uint8, operator string) error {
+func (mine *UserInfo) UpdateStatus(st uint8, operator string) error {
 	if st > UserForbidden || st < UserIdle {
 		return errors.New("the user status error")
 	}
@@ -195,13 +209,23 @@ func (mine *UserInfo)UpdateStatus(st uint8, operator string) error {
 	return err
 }
 
-func (mine *UserInfo)UpdateRoles(list []string, operator string) error {
+func (mine *UserInfo) UpdateBae(name, remark, operator string) error {
+	err := nosql.UpdateUserBase(mine.UID, name, remark, operator)
+	if err == nil {
+		mine.Name = name
+		mine.Remark = remark
+		mine.UpdateTime = time.Now()
+	}
+	return err
+}
+
+func (mine *UserInfo) UpdateRoles(list []string, operator string) error {
 	if list == nil {
 		return errors.New("the roles is nil")
 	}
 	array := make([]string, 0, len(list))
 	roles := make([]*RoleInfo, 0, len(list))
-	for i := 0;i < len(list);i +=1 {
+	for i := 0; i < len(list); i += 1 {
 		role := GetRole(list[i])
 		if role != nil {
 			roles = append(roles, role)
@@ -215,7 +239,7 @@ func (mine *UserInfo)UpdateRoles(list []string, operator string) error {
 	return err
 }
 
-func (mine *UserInfo)AppendRole(info *RoleInfo) error {
+func (mine *UserInfo) AppendRole(info *RoleInfo) error {
 	if info == nil {
 		return errors.New("the role is nil")
 	}
@@ -229,7 +253,7 @@ func (mine *UserInfo)AppendRole(info *RoleInfo) error {
 	return err
 }
 
-func (mine *UserInfo)SubtractRole(role string) error {
+func (mine *UserInfo) SubtractRole(role string) error {
 	if len(role) < 1 {
 		return errors.New("the role uid is empty")
 	}
@@ -238,7 +262,7 @@ func (mine *UserInfo)SubtractRole(role string) error {
 	}
 	err := nosql.SubtractUserRole(mine.UID, role)
 	if err == nil {
-		for i := 0;i < len(mine.roles);i += 1 {
+		for i := 0; i < len(mine.roles); i += 1 {
 			if mine.roles[i].UID == role {
 				mine.roles = append(mine.roles[:i], mine.roles[i+1:]...)
 				break
@@ -247,4 +271,3 @@ func (mine *UserInfo)SubtractRole(role string) error {
 	}
 	return err
 }
-

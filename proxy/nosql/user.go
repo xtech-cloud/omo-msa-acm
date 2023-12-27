@@ -14,15 +14,17 @@ type UserLink struct {
 	CreatedTime time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedTime time.Time          `json:"updatedAt" bson:"updatedAt"`
 	DeleteTime  time.Time          `json:"deleteAt" bson:"deleteAt"`
-	Creator string `json:"creator" bson:"creator"`
-	Operator string `json:"operator" bson:"operator"`
+	Creator     string             `json:"creator" bson:"creator"`
+	Operator    string             `json:"operator" bson:"operator"`
 
-	Type uint8 						`json:"type" bson:"type"`
-	Status uint8 					`json:"status" bson:"status"`
-	User   string                	`json:"user" bson:"user"`
-	Owner string 					`json:"owner" bson:"owner"`
-	Roles  []string                `json:"roles" bson:"roles"`
-	Links  []string 				`json:"links" bson:"links"`
+	Type   uint8    `json:"type" bson:"type"`
+	Status uint8    `json:"status" bson:"status"`
+	Name   string   `json:"name" bson:"name"`
+	User   string   `json:"user" bson:"user"`
+	Owner  string   `json:"owner" bson:"owner"`
+	Remark string   `json:"remark" bson:"remark"`
+	Roles  []string `json:"roles" bson:"roles"`
+	Links  []string `json:"links" bson:"links"`
 }
 
 func CreateUser(info *UserLink) error {
@@ -70,7 +72,7 @@ func GetAllUsers() ([]*UserLink, error) {
 }
 
 func GetUserByLink(user string) (*UserLink, error) {
-	msg := bson.M{"user":user}
+	msg := bson.M{"user": user}
 	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
@@ -84,7 +86,7 @@ func GetUserByLink(user string) (*UserLink, error) {
 }
 
 func GetUserLink(owner, user string) (*UserLink, error) {
-	msg := bson.M{"owner":owner, "user":user}
+	msg := bson.M{"owner": owner, "user": user}
 	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
@@ -98,7 +100,7 @@ func GetUserLink(owner, user string) (*UserLink, error) {
 }
 
 func GetUsersByOwner(owner string) (*UserLink, error) {
-	msg := bson.M{"owner":owner}
+	msg := bson.M{"owner": owner}
 	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
@@ -117,25 +119,31 @@ func RemoveUser(uid string) error {
 }
 
 func RemoveUserPermissions(uid, operator string) error {
-	msg := bson.M{"roles": make([]string, 0, 1), "links": make([]string, 0, 1), "operator":operator,  "updatedAt": time.Now()}
+	msg := bson.M{"roles": make([]string, 0, 1), "links": make([]string, 0, 1), "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
 func UpdateUserRoles(uid, operator string, list []string) error {
-	msg := bson.M{"roles": list, "operator":operator,  "updatedAt": time.Now()}
+	msg := bson.M{"roles": list, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
 func UpdateUserLinks(uid, operator string, list []string) error {
-	msg := bson.M{"links": list, "operator":operator,  "updatedAt": time.Now()}
+	msg := bson.M{"links": list, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
 
 func UpdateUserStatus(uid, operator string, st uint8) error {
-	msg := bson.M{"status": st, "operator":operator,  "updatedAt": time.Now()}
+	msg := bson.M{"status": st, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableUsers, uid, msg)
+	return err
+}
+
+func UpdateUserBase(uid, name, remark, operator string) error {
+	msg := bson.M{"name": name, "remark": remark, "updatedAt": time.Now()}
 	_, err := updateOne(TableUsers, uid, msg)
 	return err
 }
@@ -163,6 +171,3 @@ func SubtractUserRole(uid string, role string) error {
 	_, err := removeElement(TableUsers, uid, msg)
 	return err
 }
-
-
-

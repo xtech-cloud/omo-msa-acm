@@ -20,8 +20,10 @@ func switchUser(info *cache.UserInfo) *pb.UserLink {
 	tmp.Creator = info.Creator
 	tmp.User = info.User
 	tmp.Owner = info.Owner
+	tmp.Name = info.Name
 	tmp.Type = uint32(info.Type)
 	tmp.Status = uint32(info.Status)
+	tmp.Remark = info.Remark
 	tmp.Roles = info.Roles()
 	tmp.Links = info.Links
 	return tmp
@@ -49,7 +51,7 @@ func (mine *UserService) AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.
 	info.User = in.User
 	info.Owner = in.Owner
 	info.Operator = in.Operator
-	err := info.Create(cache.UserType(in.Type), in.Owner, in.Roles, in.Links)
+	err := info.Create(cache.UserType(in.Type), in.Name, in.Owner, in.Remark, in.Roles, in.Links)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
@@ -213,6 +215,47 @@ func (mine *UserService) UpdateLinks(ctx context.Context, in *pb.ReqUserLinks, o
 
 	out.User = in.User
 	out.List = user.Links
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *UserService) UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyUserLink) error {
+	path := "user.updateByFilter"
+	inLog(path, in)
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the user or uid is empty", pbstatus.ResultStatus_Empty)
+		return nil
+	}
+	var user *cache.UserInfo
+	user = cache.GetUser(in.Uid)
+	if user == nil {
+		out.Status = outError(path, "the user not found", pbstatus.ResultStatus_NotExisted)
+		return nil
+	}
+	var err error
+	if in.Field == "base" {
+		if len(in.Values) == 2 {
+			err = user.UpdateBae(in.Values[0], in.Values[1], in.Operator)
+		}
+	}
+	if err != nil {
+		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
+		return nil
+	}
+	out.Info = switchUser(user)
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *UserService) GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyUserLinks) error {
+	path := "user.getByFilter"
+	inLog(path, in)
+	var err error
+	if err != nil {
+		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
+		return nil
+	}
+
 	out.Status = outLog(path, out)
 	return nil
 }
