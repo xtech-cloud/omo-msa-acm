@@ -51,7 +51,7 @@ func (mine *UserService) AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.
 	info.User = in.User
 	info.Owner = in.Owner
 	info.Operator = in.Operator
-	err := info.Create(cache.UserType(in.Type), in.Name, in.Owner, in.Remark, in.Roles, in.Links)
+	err := info.Create(cache.UserType(in.Type), in.Name, in.Owner, in.Remark, uint8(in.Status), in.Roles, in.Links)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil

@@ -104,7 +104,7 @@ func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	}
 }
 
-func (mine *UserInfo) Create(tp UserType, name, owner, remark string, roles, links []string) error {
+func (mine *UserInfo) Create(tp UserType, name, owner, remark string, st uint8, roles, links []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
@@ -117,7 +117,7 @@ func (mine *UserInfo) Create(tp UserType, name, owner, remark string, roles, lin
 		db.Owner = DefaultOwner
 	}
 	db.Roles = roles
-	db.Status = UserIdle
+	db.Status = st
 	db.Links = links
 	db.Name = name
 	db.Remark = remark
