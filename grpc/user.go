@@ -21,6 +21,7 @@ func switchUser(info *cache.UserInfo) *pb.UserLink {
 	tmp.User = info.User
 	tmp.Owner = info.Owner
 	tmp.Name = info.Name
+	tmp.Cover = info.Cover
 	tmp.Type = uint32(info.Type)
 	tmp.Status = uint32(info.Status)
 	tmp.Remark = info.Remark
@@ -51,7 +52,7 @@ func (mine *UserService) AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.
 	info.User = in.User
 	info.Owner = in.Owner
 	info.Operator = in.Operator
-	err := info.Create(cache.UserType(in.Type), in.Name, in.Owner, in.Remark, uint8(in.Status), in.Roles, in.Links)
+	err := info.Create(cache.UserType(in.Type), in.Name, in.Owner, in.Remark, in.Cover, uint8(in.Status), in.Roles, in.Links)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil

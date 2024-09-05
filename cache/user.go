@@ -27,6 +27,7 @@ type UserInfo struct {
 	Type   UserType
 	User   string
 	Owner  string
+	Cover  string
 	Remark string
 	Links  []string
 	roles  []*RoleInfo
@@ -89,6 +90,7 @@ func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	mine.Owner = db.Owner
 	mine.User = db.User
 	mine.Status = db.Status
+	mine.Cover = db.Cover
 	mine.Remark = db.Remark
 	mine.Type = UserType(db.Type)
 	mine.roles = make([]*RoleInfo, 0, len(db.Roles))
@@ -104,7 +106,7 @@ func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	}
 }
 
-func (mine *UserInfo) Create(tp UserType, name, owner, remark string, st uint8, roles, links []string) error {
+func (mine *UserInfo) Create(tp UserType, name, owner, remark, cover string, st uint8, roles, links []string) error {
 	db := new(nosql.UserLink)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetUserNextID()
@@ -120,6 +122,7 @@ func (mine *UserInfo) Create(tp UserType, name, owner, remark string, st uint8, 
 	db.Status = st
 	db.Links = links
 	db.Name = name
+	db.Cover = cover
 	db.Remark = remark
 	if db.Links == nil {
 		db.Links = make([]string, 0, 1)

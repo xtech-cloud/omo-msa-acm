@@ -21,6 +21,7 @@ type UserLink struct {
 	Status uint8    `json:"status" bson:"status"`
 	Name   string   `json:"name" bson:"name"`
 	User   string   `json:"user" bson:"user"`
+	Cover  string   `json:"cover" bson:"cover"`
 	Owner  string   `json:"owner" bson:"owner"`
 	Remark string   `json:"remark" bson:"remark"`
 	Roles  []string `json:"roles" bson:"roles"`
