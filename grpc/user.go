@@ -37,7 +37,7 @@ func (mine *UserService) AddOne(ctx context.Context, in *pb.ReqUserAdd, out *pb.
 		out.Status = outError(path, "the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	t := cache.GetUser(in.User)
+	t := cache.GetUser(in.Owner, in.User)
 	if t != nil {
 		out.Status = outError(path, "the user had repeated", pbstatus.ResultStatus_Repeated)
 		return nil
@@ -69,13 +69,7 @@ func (mine *UserService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb
 		out.Status = outError(path, "the user uid is empty", pbstatus.ResultStatus_Empty)
 		return nil
 	}
-	var info *cache.UserInfo
-	if in.Owner != "" {
-		info = cache.GetUserByOwner(in.Owner, in.Uid)
-	} else {
-		info = cache.GetUser(in.Uid)
-	}
-
+	info := cache.GetUserByOwner(in.Owner, in.Uid)
 	if info == nil {
 		out.Status = outError(path, "the user not found", pbstatus.ResultStatus_NotExisted)
 		return nil
@@ -110,20 +104,11 @@ func (mine *UserService) RemoveOne(ctx context.Context, in *pb.RequestInfo, out 
 func (mine *UserService) GetList(ctx context.Context, in *pb.RequestPage, out *pb.ReplyUserList) error {
 	path := "user.getList"
 	inLog(path, in)
-	out.Users = make([]*pb.UserLink, 0, in.Number)
-	all := cache.AllUsers()
-	if in.Parent == "" {
-		for _, value := range all {
-			out.Users = append(out.Users, switchUser(value))
-		}
-	} else {
-		for _, value := range all {
-			if value.Owner == in.Parent {
-				out.Users = append(out.Users, switchUser(value))
-			}
-		}
+	arr := cache.GetUsersByOwner(in.Parent)
+	out.Users = make([]*pb.UserLink, 0, len(arr))
+	for _, value := range arr {
+		out.Users = append(out.Users, switchUser(value))
 	}
-
 	outLog(path, fmt.Sprintf("the length = %d", len(out.Users)))
 	return nil
 }
@@ -151,7 +136,7 @@ func (mine *UserService) UpdateRoles(ctx context.Context, in *pb.ReqUserLinks, o
 	inLog(path, in)
 	var user *cache.UserInfo
 	if len(in.Uid) > 1 {
-		user = cache.GetUser(in.Uid)
+		user = cache.GetUser(in.Owner, in.Uid)
 	} else {
 		user = cache.GetUserByOwner(in.Owner, in.User)
 	}
@@ -228,13 +213,13 @@ func (mine *UserService) UpdateByFilter(ctx context.Context, in *pb.RequestUpdat
 		return nil
 	}
 	var user *cache.UserInfo
-	user = cache.GetUser(in.Uid)
-	if user == nil {
-		out.Status = outError(path, "the user not found", pbstatus.ResultStatus_NotExisted)
-		return nil
-	}
 	var err error
 	if in.Field == "base" {
+		user = cache.GetUser(in.Uid, in.Value)
+		if user == nil {
+			out.Status = outError(path, "the user not found", pbstatus.ResultStatus_NotExisted)
+			return nil
+		}
 		if len(in.Values) == 2 {
 			err = user.UpdateBae(in.Values[0], in.Values[1], in.Operator)
 		}

@@ -11,14 +11,13 @@ type BaseInfo struct {
 	ID         uint64 `json:"-"`
 	UID        string `json:"uid"`
 	Name       string `json:"name"`
-	Creator string
-	Operator string
+	Creator    string
+	Operator   string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type cacheContext struct {
-	users    []*UserInfo
 	roles    []*RoleInfo
 	apiMenus []*APIMenuInfo
 	catalogs []*CatalogInfo
@@ -32,7 +31,6 @@ var cacheCtx *cacheContext
 func InitData() error {
 	cacheCtx = &cacheContext{}
 	cacheCtx.roles = make([]*RoleInfo, 0, 10)
-	cacheCtx.users = make([]*UserInfo, 0, 100)
 	cacheCtx.apiMenus = make([]*APIMenuInfo, 0, 100)
 	cacheCtx.catalogs = make([]*CatalogInfo, 0, 100)
 	cacheCtx.modules = make([]*ModuleInfo, 0, 100)
@@ -53,7 +51,7 @@ func InitData() error {
 	//}
 	//cacheCtx.enforcer = e
 
-	roles,err := nosql.GetAllRoles()
+	roles, err := nosql.GetAllRoles()
 	if err == nil {
 		for _, role := range roles {
 			t := new(RoleInfo)
@@ -62,7 +60,7 @@ func InitData() error {
 		}
 	}
 
-	modules,err1 := nosql.GetAllModules()
+	modules, err1 := nosql.GetAllModules()
 	if err1 == nil {
 		for _, menu := range modules {
 			t := new(ModuleInfo)
@@ -71,7 +69,7 @@ func InitData() error {
 		}
 	}
 
-	catalogs,err3 := nosql.GetAllCatalogs()
+	catalogs, err3 := nosql.GetAllCatalogs()
 	if err3 == nil {
 		for _, menu := range catalogs {
 			t := new(CatalogInfo)
@@ -80,15 +78,7 @@ func InitData() error {
 		}
 	}
 
-	users,err2 := nosql.GetAllUsers()
-	if err2 == nil {
-		for _, temp := range users {
-			t := new(UserInfo)
-			t.initInfo(temp)
-			cacheCtx.users = append(cacheCtx.users, t)
-		}
-	}
-	scenes,err4 := nosql.GetAllScenes()
+	scenes, err4 := nosql.GetAllScenes()
 	if err4 == nil {
 		for _, temp := range scenes {
 			t := new(SceneInfo)

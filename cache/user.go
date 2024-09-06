@@ -33,51 +33,43 @@ type UserInfo struct {
 	roles  []*RoleInfo
 }
 
-func AllUsers() []*UserInfo {
-	return cacheCtx.users
-}
-
-func GetUser(uid string) *UserInfo {
-	for i := 0; i < len(cacheCtx.users); i += 1 {
-		if cacheCtx.users[i].User == uid || cacheCtx.users[i].UID == uid {
-			return cacheCtx.users[i]
-		}
-	}
+func GetUser(owner, uid string) *UserInfo {
 	db, err := nosql.GetUser(uid)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
-		cacheCtx.users = append(cacheCtx.users, info)
 		return info
 	}
-	return getUserByLink(uid)
-}
-
-func getUserByLink(uid string) *UserInfo {
-	db, err := nosql.GetUserByLink(uid)
-	if err == nil {
-		info := new(UserInfo)
-		info.initInfo(db)
-		cacheCtx.users = append(cacheCtx.users, info)
-		return info
-	}
-	return nil
+	return GetUserByOwner(owner, uid)
 }
 
 func GetUserByOwner(owner, user string) *UserInfo {
-	for i := 0; i < len(cacheCtx.users); i += 1 {
-		if cacheCtx.users[i].Owner == owner && cacheCtx.users[i].User == user {
-			return cacheCtx.users[i]
-		}
+	if len(owner) < 1 {
+		owner = DefaultOwner
 	}
-	db, err := nosql.GetUserLink(owner, user)
+	db, err := nosql.GetUserByLink(owner, user)
 	if err == nil {
 		info := new(UserInfo)
 		info.initInfo(db)
-		cacheCtx.users = append(cacheCtx.users, info)
 		return info
 	}
 	return nil
+}
+
+func GetUsersByOwner(owner string) []*UserInfo {
+	if len(owner) < 1 {
+		owner = DefaultOwner
+	}
+	dbs, err := nosql.GetUsersByOwner(owner)
+	list := make([]*UserInfo, 0, len(dbs))
+	if err == nil {
+		for _, db := range dbs {
+			info := new(UserInfo)
+			info.initInfo(db)
+			list = append(list, info)
+		}
+	}
+	return list
 }
 
 func (mine *UserInfo) initInfo(db *nosql.UserLink) {
@@ -135,7 +127,6 @@ func (mine *UserInfo) Create(tp UserType, name, owner, remark, cover string, st 
 	err := nosql.CreateUser(db)
 	if err == nil {
 		mine.initInfo(db)
-		cacheCtx.users = append(cacheCtx.users, mine)
 	}
 	return err
 }
@@ -143,16 +134,16 @@ func (mine *UserInfo) Create(tp UserType, name, owner, remark, cover string, st 
 func (mine *UserInfo) Remove(operator string) error {
 	err := nosql.RemoveUser(mine.UID)
 	if err == nil {
-		for i := 0; i < len(cacheCtx.users); i += 1 {
-			if cacheCtx.users[i].UID == mine.UID {
-				if i == len(cacheCtx.users)-1 {
-					cacheCtx.users = append(cacheCtx.users[:i])
-				} else {
-					cacheCtx.users = append(cacheCtx.users[:i], cacheCtx.users[i+1:]...)
-				}
-				break
-			}
-		}
+		//for i := 0; i < len(cacheCtx.users); i += 1 {
+		//	if cacheCtx.users[i].UID == mine.UID {
+		//		if i == len(cacheCtx.users)-1 {
+		//			cacheCtx.users = append(cacheCtx.users[:i])
+		//		} else {
+		//			cacheCtx.users = append(cacheCtx.users[:i], cacheCtx.users[i+1:]...)
+		//		}
+		//		break
+		//	}
+		//}
 	}
 	return err
 }

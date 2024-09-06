@@ -72,8 +72,8 @@ func GetAllUsers() ([]*UserLink, error) {
 	return items, nil
 }
 
-func GetUserByLink(user string) (*UserLink, error) {
-	msg := bson.M{"user": user}
+func GetUserByLink(owner, user string) (*UserLink, error) {
+	msg := bson.M{"user": user, "owner": owner}
 	result, err := findOneBy(TableUsers, msg)
 	if err != nil {
 		return nil, err
@@ -86,32 +86,23 @@ func GetUserByLink(user string) (*UserLink, error) {
 	return model, nil
 }
 
-func GetUserLink(owner, user string) (*UserLink, error) {
-	msg := bson.M{"owner": owner, "user": user}
-	result, err := findOneBy(TableUsers, msg)
-	if err != nil {
-		return nil, err
-	}
-	model := new(UserLink)
-	err1 := result.Decode(model)
+func GetUsersByOwner(owner string) ([]*UserLink, error) {
+	var items = make([]*UserLink, 0, 100)
+	filter := bson.M{"owner": owner}
+	cursor, err1 := findMany(TableUsers, filter, 0)
 	if err1 != nil {
 		return nil, err1
 	}
-	return model, nil
-}
-
-func GetUsersByOwner(owner string) (*UserLink, error) {
-	msg := bson.M{"owner": owner}
-	result, err := findOneBy(TableUsers, msg)
-	if err != nil {
-		return nil, err
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		var node = new(UserLink)
+		if err := cursor.Decode(node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
 	}
-	model := new(UserLink)
-	err1 := result.Decode(model)
-	if err1 != nil {
-		return nil, err1
-	}
-	return model, nil
+	return items, nil
 }
 
 func RemoveUser(uid string) error {
