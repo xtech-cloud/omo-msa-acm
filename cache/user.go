@@ -83,6 +83,7 @@ func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	mine.User = db.User
 	mine.Status = db.Status
 	mine.Cover = db.Cover
+	mine.Name = db.Name
 	mine.Remark = db.Remark
 	mine.Type = UserType(db.Type)
 	mine.roles = make([]*RoleInfo, 0, len(db.Roles))
