@@ -72,6 +72,22 @@ func GetUsersByOwner(owner string) []*UserInfo {
 	return list
 }
 
+func GetUsersByUser(user string) []*UserInfo {
+	if len(user) < 1 {
+		return nil
+	}
+	dbs, err := nosql.GetUsersByLink(user)
+	list := make([]*UserInfo, 0, len(dbs))
+	if err == nil {
+		for _, db := range dbs {
+			info := new(UserInfo)
+			info.initInfo(db)
+			list = append(list, info)
+		}
+	}
+	return list
+}
+
 func (mine *UserInfo) initInfo(db *nosql.UserLink) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID

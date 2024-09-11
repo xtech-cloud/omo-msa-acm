@@ -86,6 +86,25 @@ func GetUserByLink(owner, user string) (*UserLink, error) {
 	return model, nil
 }
 
+func GetUsersByLink(user string) ([]*UserLink, error) {
+	var items = make([]*UserLink, 0, 100)
+	filter := bson.M{"user": user}
+	cursor, err1 := findMany(TableUsers, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	defer cursor.Close(context.Background())
+	for cursor.Next(context.Background()) {
+		var node = new(UserLink)
+		if err := cursor.Decode(node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetUsersByOwner(owner string) ([]*UserLink, error) {
 	var items = make([]*UserLink, 0, 100)
 	filter := bson.M{"owner": owner}

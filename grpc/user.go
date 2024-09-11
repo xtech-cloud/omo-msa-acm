@@ -104,11 +104,20 @@ func (mine *UserService) RemoveOne(ctx context.Context, in *pb.RequestInfo, out 
 func (mine *UserService) GetList(ctx context.Context, in *pb.RequestPage, out *pb.ReplyUserList) error {
 	path := "user.getList"
 	inLog(path, in)
-	arr := cache.GetUsersByOwner(in.Parent)
-	out.Users = make([]*pb.UserLink, 0, len(arr))
-	for _, value := range arr {
-		out.Users = append(out.Users, switchUser(value))
+	if in.Type == 0 {
+		arr := cache.GetUsersByOwner(in.Parent)
+		out.Users = make([]*pb.UserLink, 0, len(arr))
+		for _, value := range arr {
+			out.Users = append(out.Users, switchUser(value))
+		}
+	} else if in.Type == 1 {
+		arr := cache.GetUsersByUser(in.Parent)
+		out.Users = make([]*pb.UserLink, 0, len(arr))
+		for _, value := range arr {
+			out.Users = append(out.Users, switchUser(value))
+		}
 	}
+
 	outLog(path, fmt.Sprintf("the length = %d", len(out.Users)))
 	return nil
 }
@@ -237,6 +246,7 @@ func (mine *UserService) GetByFilter(ctx context.Context, in *pb.RequestFilter, 
 	path := "user.getByFilter"
 	inLog(path, in)
 	var err error
+
 	if err != nil {
 		out.Status = outError(path, err.Error(), pbstatus.ResultStatus_DBException)
 		return nil
